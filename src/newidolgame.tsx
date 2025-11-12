@@ -1,23 +1,198 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { 
-  Star, Music, Heart, TrendingUp, Users, Award, Calendar, DollarSign, Save, 
-  Upload, Building, Tv, Gift, Trophy, Sparkles, AlertCircle, Zap, Globe, 
-  Film, Plane, GraduationCap, Shirt, BarChart3, Bell, X, Edit, Plus, Shuffle, 
+// @ts-nocheck
+import { useState, useEffect, useCallback, ChangeEvent, ReactNode, ComponentType } from 'react';
+import {
+  Star, Music, Heart, TrendingUp, Users, Award, Calendar, DollarSign, Save,
+  Upload, Building, Tv, Gift, Trophy, Sparkles, AlertCircle, Zap, Globe,
+  Film, Plane, GraduationCap, Shirt, BarChart3, Bell, X, Edit, Plus, Shuffle,
   User, Check, ChevronDown, ChevronUp, ShoppingBag, Mic, Hand, Brain, Package,
-  Minimize2, Maximize2, Trash2, MapPin, Smile, LogIn, CalendarCheck, Home, 
+  Minimize2, Maximize2, Trash2, MapPin, Smile, LogIn, CalendarCheck, Home,
   ClipboardCheck, Clock, Layers, Clipboard
-} from 'lucide-react';
-import { initializeApp } from 'firebase/app';
-import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from 'firebase/auth';
-import { getFirestore, doc, setDoc, getDoc, setLogLevel } from 'firebase/firestore';
+} from './lucide-react';
+import {
+  initializeApp,
+  getAuth,
+  signInAnonymously,
+  signInWithCustomToken,
+  onAuthStateChanged,
+  getFirestore,
+  doc,
+  setDoc,
+  getDoc,
+  setLogLevel,
+} from './firebaseClient';
+
+type AnyRecord = Record<string, any>;
+
+declare const __app_id: string | undefined;
+declare const __firebase_config: string | undefined;
+declare const __initial_auth_token: string | undefined;
+
+type Setlist = AnyRecord & {
+  id: number;
+  name: string;
+  theme: string;
+  difficulty: number;
+};
+
+type Track = AnyRecord & {
+  name: string;
+  type?: string;
+  members: Array<string | number>;
+  center?: string | number | null;
+};
+
+type Song = AnyRecord & {
+  id: number;
+  name: string;
+  tracks: Track[];
+  targetGroup?: string;
+  releaseWeek?: number;
+  totalTracks?: number;
+};
+
+type Member = AnyRecord & {
+  id: string | number;
+  name: string;
+  nickname?: string;
+  homeGroup?: string;
+  isSister?: boolean;
+  isAvailable?: boolean;
+  stamina?: number;
+  morale?: number;
+  singing?: number;
+  dancing?: number;
+  variety?: number;
+  fans?: number;
+  yearsActive?: number;
+  position?: string;
+  kenninGroups?: string[];
+};
+
+type NotificationItem = AnyRecord & {
+  id: string | number;
+  title: string;
+  content: string;
+  week?: number;
+};
+
+type Team = AnyRecord & {
+  id: string | number;
+  name: string;
+  members: Array<Member['id']>;
+  currentSetlistId?: number;
+  currentSetlist?: Setlist | null;
+};
+
+type SisterGroup = AnyRecord & {
+  id: string | number;
+  name: string;
+  location?: string;
+  songs?: Song[];
+  members?: Member[];
+  fans?: number;
+};
+
+type Statistics = AnyRecord & {
+  totalRevenue: number;
+  totalConcerts: number;
+  totalSongs: number;
+  revenueHistory: number[];
+};
+
+type BuildingState = AnyRecord & {
+  theater: boolean;
+  practiceRooms: {
+    vocal: number;
+    dance: number;
+    variety: number;
+  };
+};
+
+type MerchInventory = {
+  photos: number;
+  towels: number;
+  lightsticks: number;
+  [key: string]: number;
+};
+
+type Venue = {
+  id: number;
+  name: string;
+  capacity: number;
+  cost: number;
+  maintenance: number;
+};
+
+type PerformanceType = {
+  label: string;
+  category: string;
+  cost: number;
+  fanImpact: number;
+  skillImpact: number;
+  staminaDrain: number;
+  desc: string;
+};
+
+type PerformanceTrackOption = {
+  id: string;
+  name: string;
+  singleName: string;
+  group?: string;
+  isTitle: boolean;
+};
+
+type PerformanceHistoryEntry = {
+  id: number;
+  name: string;
+  category: string;
+  week: number;
+  cost: number;
+  revenue: number;
+  members: string[];
+  tracks: string[];
+};
+
+type EditableTrack = {
+  name: string;
+  type: string;
+  members: string[];
+  center: string | null;
+};
+
+type MemberSelectionListProps = {
+  members: Member[];
+  selectedIds: Array<Member['id']>;
+  toggleMember: (memberId: Member['id']) => void;
+  disabled?: boolean;
+};
+
+type TrainingCampState = {
+  memberId: Member['id'];
+  skill: string;
+  weeksLeft: number;
+};
+
+type TourState = {
+  name: string;
+  weeksLeft: number;
+  cities: number;
+  revenue: number;
+};
+
+type CenterHistoryEntry = {
+  week: number;
+  singleName: string;
+  songName: string;
+  group: string;
+};
 
 
 // --- Custom Hook for Game Logic and State Management ---
 const useIdolManager = () => {
     // --- FIREBASE/STATE PERSISTENCE ---
-    const [db, setDb] = useState(null);
-    const [auth, setAuth] = useState(null);
-    const [userId, setUserId] = useState(null);
+    const [db, setDb] = useState<ReturnType<typeof getFirestore> | null>(null);
+    const [auth, setAuth] = useState<ReturnType<typeof getAuth> | null>(null);
+    const [userId, setUserId] = useState<string | null>(null);
     const [isAuthReady, setIsAuthReady] = useState(false);
     
     const SAVE_COLLECTION = "game_data";
@@ -77,60 +252,60 @@ const useIdolManager = () => {
     const [groupName, setGroupName] = useState('');
     const [money, setMoney] = useState(50000);
     const [week, setWeek] = useState(1);
-    const [members, setMembers] = useState([]);
-    const [selectedMember, setSelectedMember] = useState(null);
+    const [members, setMembers] = useState<Member[]>([]);
+    const [selectedMember, setSelectedMember] = useState<Member | null>(null);
     const [message, setMessage] = useState('');
     const [totalFans, setTotalFans] = useState(1000);
     const [currentTab, setCurrentTab] = useState('members');
     const [showNotifications, setShowNotifications] = useState(false);
-    const [notifications, setNotifications] = useState([]);
-    const [songs, setSongs] = useState([]);
-    const [teams, setTeams] = useState([]);
-    const [allSetlists, setAllSetlists] = useState([
+    const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+    const [songs, setSongs] = useState<Song[]>([]);
+    const [teams, setTeams] = useState<Team[]>([]);
+    const [allSetlists, setAllSetlists] = useState<Setlist[]>([
         { id: 1, name: "A1 'Party ga Hajimaru yo'", theme: 'classic', difficulty: 100 },
         { id: 2, name: "K2 'Aitakatta'", theme: 'classic', difficulty: 120 },
         { id: 3, name: "H3 'Mokugekisha'", theme: 'dance', difficulty: 150 },
         { id: 4, name: "B4 'Idol no Yoake'", theme: 'vocal', difficulty: 140 },
     ]);
-    const [buildings, setBuildings] = useState({ theater: false, practiceRooms: { vocal: 0, dance: 0, variety: 0 } });
-    const [sisterGroups, setSisterGroups] = useState([]); 
-    const [rivalGroups, setRivalGroups] = useState([]);
-    const [achievements, setAchievements] = useState([]);
-    const [hallOfFame, setHallOfFame] = useState([]);
-    const [events, setEvents] = useState([]);
-    const [sponsorships, setSponsorships] = useState([]);
-    const [showModal, setShowModal] = useState(null);
+    const [buildings, setBuildings] = useState<BuildingState>({ theater: false, practiceRooms: { vocal: 0, dance: 0, variety: 0 } });
+    const [sisterGroups, setSisterGroups] = useState<SisterGroup[]>([]);
+    const [rivalGroups, setRivalGroups] = useState<SisterGroup[]>([]);
+    const [achievements, setAchievements] = useState<any[]>([]);
+    const [hallOfFame, setHallOfFame] = useState<any[]>([]);
+    const [events, setEvents] = useState<any[]>([]);
+    const [sponsorships, setSponsorships] = useState<any[]>([]);
+    const [showModal, setShowModal] = useState<string | null>(null);
     const [difficulty, setDifficulty] = useState('local');
     const [internationalMarkets, setInternationalMarkets] = useState({ asia: false, west: false });
-    const [outfits, setOutfits] = useState([]);
-    const [tours, setTours] = useState([]);
-    const [activeTour, setActiveTour] = useState(null);
-    const [musicVideos, setMusicVideos] = useState([]);
-    const [varietyShows, setVarietyShows] = useState([]);
-    const [photoBooks, setPhotoBooks] = useState([]);
-    const [documentaries, setDocumentaries] = useState([]);
-    const [collaborations, setCollaborations] = useState([]);
-    const [scandals, setScandals] = useState([]);
-    const [statistics, setStatistics] = useState({ totalRevenue: 0, totalConcerts: 0, totalSongs: 0, revenueHistory: [] });
-    const [modalData, setModalData] = useState(null);
-    const [selectedSisterGroup, setSelectedSisterGroup] = useState(null);
-    const [selectedTheaterTeam, setSelectedTheaterTeam] = useState(null);
+    const [outfits, setOutfits] = useState<any[]>([]);
+    const [tours, setTours] = useState<any[]>([]);
+    const [activeTour, setActiveTour] = useState<any>(null);
+    const [musicVideos, setMusicVideos] = useState<any[]>([]);
+    const [varietyShows, setVarietyShows] = useState<any[]>([]);
+    const [photoBooks, setPhotoBooks] = useState<any[]>([]);
+    const [documentaries, setDocumentaries] = useState<any[]>([]);
+    const [collaborations, setCollaborations] = useState<any[]>([]);
+    const [scandals, setScandals] = useState<any[]>([]);
+    const [statistics, setStatistics] = useState<Statistics>({ totalRevenue: 0, totalConcerts: 0, totalSongs: 0, revenueHistory: [] });
+    const [modalData, setModalData] = useState<any>(null);
+    const [selectedSisterGroup, setSelectedSisterGroup] = useState<SisterGroup['id'] | null>(null);
+    const [selectedTheaterTeam, setSelectedTheaterTeam] = useState<Team['id'] | null>(null);
     const [username, setUsername] = useState('Guest');
-    const [memberView, setMemberView] = useState('list'); 
-    const [merchInventory, setMerchInventory] = useState({ photos: 0, towels: 0, lightsticks: 0 });
-    const [merchPrices] = useState({ photos: 1500, towels: 2500, lightsticks: 3500 });
-    const [merchProdCost] = useState({ photos: 500, towels: 1000, lightsticks: 1500 });
-    const [activeTrainingCamp, setActiveTrainingCamp] = useState(null); 
-    const [venues, setVenues] = useState([
+    const [memberView, setMemberView] = useState('list');
+    const [merchInventory, setMerchInventory] = useState<MerchInventory>({ photos: 0, towels: 0, lightsticks: 0 });
+    const [merchPrices] = useState<Record<string, number>>({ photos: 1500, towels: 2500, lightsticks: 3500 });
+    const [merchProdCost] = useState<Record<string, number>>({ photos: 500, towels: 1000, lightsticks: 1500 });
+    const [activeTrainingCamp, setActiveTrainingCamp] = useState<TrainingCampState | null>(null);
+    const [venues, setVenues] = useState<Venue[]>([
         { id: 1, name: 'Local Theater (Own)', capacity: 250, cost: 0, maintenance: 5000 },
         { id: 2, name: 'Small Hall (1K)', capacity: 1000, cost: 50000, maintenance: 10000 },
         { id: 3, name: 'City Arena (5K)', capacity: 5000, cost: 250000, maintenance: 30000 },
         { id: 4, name: 'Dome (50K)', capacity: 50000, cost: 5000000, maintenance: 100000 },
     ]);
-    const [performanceHistory, setPerformanceHistory] = useState([]);
+    const [performanceHistory, setPerformanceHistory] = useState<PerformanceHistoryEntry[]>([]);
 
     // Performance Types Data
-    const performanceTypes = [
+    const performanceTypes: PerformanceType[] = [
         { label: "Debut Stage", category: "Official", cost: 10000, fanImpact: 0.1, skillImpact: 0.1, staminaDrain: 20, desc: "The official first performance to introduce the group." },
         { label: "Comeback Stage", category: "Official", cost: 20000, fanImpact: 0.2, skillImpact: 0.15, staminaDrain: 30, desc: "Performance for new album/single promotions." },
         { label: "Music Show Performance", category: "Official", cost: 15000, fanImpact: 0.15, skillImpact: 0.1, staminaDrain: 25, desc: "Weekly appearance on a major music program." },
@@ -215,7 +390,7 @@ const useIdolManager = () => {
                 setStatistics(data.statistics ? JSON.parse(data.statistics) : { totalRevenue: 0, totalConcerts: 0, totalSongs: 0, revenueHistory: [] });
                 setMerchInventory(data.merchInventory ? JSON.parse(data.merchInventory) : { photos: 0, towels: 0, lightsticks: 0 });
                 setActiveTour(data.activeTour ? JSON.parse(data.activeTour) : null);
-                setActiveTrainingCamp(data.activeTrainingCamp ? JSON.parse(data.activeTrainingCamp) : null);
+                setActiveTrainingCamp(data.activeTrainingCamp ? (JSON.parse(data.activeTrainingCamp) as TrainingCampState) : null);
                 setUsername(data.username || gameUsername);
                 setVenues(data.venues ? JSON.parse(data.venues) : [
                     { id: 1, name: 'Local Theater (Own)', capacity: 250, cost: 0, maintenance: 5000 },
@@ -352,9 +527,9 @@ const useIdolManager = () => {
       return all.filter(m => m.isAvailable);
     };
     
-    const getMemberById = (memberId) => {
+    const getMemberById = (memberId: Member['id']): Member | undefined => {
       if (String(memberId).startsWith('sg-')) {
-          const parts = String(memberId).split('-'); 
+          const parts = String(memberId).split('-');
           const sgId = parseInt(parts[1]);
           const mId = parseInt(parts[2]);
           const sg = (sisterGroups || []).find(g => g.id === sgId);
@@ -362,17 +537,20 @@ const useIdolManager = () => {
           if (member && sg) {
               return {
                   ...member,
-                  id: memberId, 
+                  id: memberId,
                   name: `${member.name} (${sg.name})`,
                   isSister: true,
                   groupId: sgId
-              };
+              } as Member;
           }
       }
       return members.find(m => String(m.id) === String(memberId));
     };
-    
-    const updateMemberState = (memberId, updateFn) => {
+
+    const updateMemberState = (
+      memberId: Member['id'],
+      updateFn: (member: Member) => Member,
+    ) => {
       if (!String(memberId).startsWith('sg-')) {
           setMembers(prev => prev.map(m => String(m.id) === String(memberId) ? updateFn(m) : m));
       } else {
@@ -455,7 +633,7 @@ const useIdolManager = () => {
     };
 
     const restAllTired = () => {
-      setMembers(prev => prev.map(m => (m.stamina < 50 && m.isAvailable) ? { ...m, stamina: Math.min(100, m.stamina + 30) } : m));
+      setMembers(prev => prev.map(m => ((m.stamina || 0) < 50 && m.isAvailable) ? { ...m, stamina: Math.min(100, (m.stamina || 0) + 30) } : m));
       setMessage('All tired, available main group members rested!');
     };
 
@@ -467,8 +645,8 @@ const useIdolManager = () => {
       setMessage('Theater built! You can now create teams and hold theater shows.');
     };
 
-    const upgradePracticeRoom = (type) => {
-      const roomType = type === 'vocal' ? 'vocal' : type;
+    const upgradePracticeRoom = (type: 'vocal' | 'dance' | 'variety') => {
+      const roomType = type;
       const currentLevel = buildings.practiceRooms[type];
       const cost = 25000 + currentLevel * 15000;
       if (money < cost) return setMessage(`Need ¥${cost.toLocaleString()} to upgrade the ${type} room (Lvl ${currentLevel + 1})!`);
@@ -487,7 +665,7 @@ const useIdolManager = () => {
       if (!buildings.theater) return setMessage("You need a theater to organize tours.");
       if (members.length < 5) return setMessage("Need at least 5 members for a tour.");
       if (money < cost) return setMessage(`Tours cost ¥${cost.toLocaleString()}.`);
-      
+
       setMoney(prev => prev - cost);
       setActiveTour({ name: `${groupName} National Tour`, weeksLeft: 4, cities: 4, revenue: 0 });
       setMessage("Tour started! It will run for 4 weeks. Use 'Advance Tour' to progress the tour.");
@@ -595,7 +773,7 @@ const useIdolManager = () => {
       return setMessage("Major Concerts are now scheduled via the 'Schedule Performance' button, under the 'Touring' category.");
     };
     
-    const graduateMember = (memberId) => {
+    const graduateMember = (memberId: Member['id']) => {
       const member = getMemberById(memberId);
       if (!member) return;
 
@@ -606,7 +784,7 @@ const useIdolManager = () => {
           setSisterGroups(prev => prev.map(sg => {
               if (sg.id === sgId) {
                   const mId = parseInt(String(memberId).split('-')[2]);
-                  return { ...sg, members: sg.members.filter(m => m.id !== mId) };
+                  return { ...sg, members: (sg.members || []).filter(m => m.id !== mId) };
               }
               return sg;
           }));
@@ -619,7 +797,7 @@ const useIdolManager = () => {
       setSelectedMember(null);
     };
     
-    const holdTheaterShow = (concertTheme) => {
+    const holdTheaterShow = (concertTheme: string) => {
       setShowModal(null);
       const availableMembers = members.filter(m => m.isAvailable);
       
@@ -680,11 +858,11 @@ const useIdolManager = () => {
       setMessage(concertMessage);
     };
     
-    const holdSisterGroupShow = (sgId) => {
+    const holdSisterGroupShow = (sgId: SisterGroup['id']) => {
       const sg = sisterGroups.find(g => g.id === sgId);
       if (!sg) return;
 
-      const performingMembers = sg.members.filter(m => m.isAvailable);
+      const performingMembers = (sg.members || []).filter(m => m.isAvailable);
       if (performingMembers.length < 3) return setMessage(`${sg.name} needs at least 3 available members for a show.`);
 
       const cost = 10000;
@@ -696,10 +874,10 @@ const useIdolManager = () => {
       const fanGain = Math.floor(performance / 50);
 
       setMoney(prev => prev + profit);
-      setSisterGroups(prev => prev.map(g => g.id === sgId ? { 
-          ...g, 
-          fans: g.fans + fanGain, 
-          members: g.members.map(m => m.isAvailable ? { ...m, stamina: Math.max(0, m.stamina - 20) } : m) 
+      setSisterGroups(prev => prev.map(g => g.id === sgId ? {
+          ...g,
+          fans: (g.fans || 0) + fanGain,
+          members: (g.members || []).map(m => m.isAvailable ? { ...m, stamina: Math.max(0, (m.stamina || 0) - 20) } : m)
       } : g));
       
       setMessage(`${sg.name} held a show. Profit: ¥${profit.toLocaleString()}. +${fanGain} fans to ${sg.name}.`);
@@ -750,7 +928,7 @@ const useIdolManager = () => {
         setShowModal(null);
     };
 
-    const confirmCreateSong = (songData) => {
+    const confirmCreateSong = (songData: { songName: string; targetGroupId: string; tracks: Track[]; }) => {
       const cost = 10000;
       if (money < cost) return setMessage('Songs cost ¥10,000!');
 
@@ -794,21 +972,21 @@ const useIdolManager = () => {
         trackCountHistory: [{ week, count: songData.tracks.length }] 
       };
 
-      const updateMemberHistory = (m, sg = null) => {
-          const memberId = sg ? `sg-${sg.id}-${m.id}` : String(m.id); 
-          const currentGroupName = sg ? sg.name : groupName; 
+        const updateMemberHistory = (m: Member, sg: SisterGroup | null = null): Member => {
+            const memberId = sg ? `sg-${sg.id}-${m.id}` : String(m.id);
+            const currentGroupName = sg ? sg.name : groupName;
 
-          if (!songData.tracks.some(track => (track.members || []).some(id => String(id) === memberId))) {
-              return m;
-          }
+            if (!songData.tracks.some(track => (track.members || []).some(id => String(id) === memberId))) {
+                return m;
+            }
 
-          const participatedTracks = songData.tracks.filter(track => (track.members || []).some(id => String(id) === memberId));
-          let newCenterHistoryEntries = [];
+            const participatedTracks = songData.tracks.filter(track => (track.members || []).some(id => String(id) === memberId));
+            const newCenterHistoryEntries: CenterHistoryEntry[] = [];
 
-          participatedTracks.forEach(track => {
-              if (String(track.center) === memberId) {
-                  newCenterHistoryEntries.push({ 
-                      week, 
+            participatedTracks.forEach((track) => {
+                if (String(track.center) === memberId) {
+                    newCenterHistoryEntries.push({
+                        week,
                       singleName: songData.songName, 
                       songName: track.name, 
                       group: currentGroupName, 
@@ -868,15 +1046,15 @@ const useIdolManager = () => {
         setTotalFans(prev => (prev || 0) + newFans);
         setMembers(prev => (prev || []).map(m => updateMemberHistory(m)));
 
-        setSisterGroups(prev => (prev || []).map(sg => {
-          if (sg.members.some(m => songData.tracks.some(track => (track.members || []).some(id => String(id) === `sg-${sg.id}-${m.id}`)))) {
-              return {
-                  ...sg,
-                  members: (sg.members || []).map(m => updateMemberHistory(m, sg))
-              };
-          }
-          return sg;
-        }));
+          setSisterGroups(prev => (prev || []).map(sg => {
+            if ((sg.members || []).some(m => songData.tracks.some(track => (track.members || []).some(id => String(id) === `sg-${sg.id}-${m.id}`)))) {
+                return {
+                    ...sg,
+                    members: (sg.members || []).map(m => updateMemberHistory(m, sg))
+                };
+            }
+            return sg;
+          }));
       }
 
       setMoney(prev => (prev || 0) - cost + revenue);
@@ -886,17 +1064,19 @@ const useIdolManager = () => {
     
     // --- Performance Management Logic ---
 
-    const holdMajorConcert = (venue, setlist, selectedMemberIds) => {
+      const holdMajorConcert = (venue: Venue, setlist: Setlist | undefined, selectedMemberIds: Array<Member['id']>) => {
         if (!setlist) return setMessage("Must select a setlist.");
         if (selectedMemberIds.length === 0) return setMessage("Must select at least one member to perform.");
         
-        const performingMembers = selectedMemberIds.map(getMemberById).filter(m => m && m.isAvailable);
+        const performingMembers = selectedMemberIds
+            .map(memberId => getMemberById(memberId))
+            .filter((m): m is Member => Boolean(m && m.isAvailable));
         if (performingMembers.length === 0) return setMessage("No selected members are available to perform.");
 
         const baseCost = venue.cost + venue.maintenance;
         if (money < baseCost) return setMessage(`Insufficient funds! Concert costs ¥${baseCost.toLocaleString()}.`);
 
-        const avgSkill = performingMembers.reduce((sum, m) => m.singing + m.dancing, 0) / (performingMembers.length * 200);
+        const avgSkill = performingMembers.reduce((sum, m) => sum + ((m.singing || 0) + (m.dancing || 0)), 0) / (performingMembers.length * 200);
         
         // Calculate Ticket Sales (Capped by Capacity)
         const ticketPrice = 5000 + (venue.capacity / 100); 
@@ -920,24 +1100,24 @@ const useIdolManager = () => {
         // 2. Update Members
         const performingMemberIds = performingMembers.map(m => m.id);
         
-        const applyMemberUpdate = (m) => {
+        const applyMemberUpdate = (m: Member): Member => {
             if (performingMemberIds.some(id => String(id) === String(m.id))) {
                 return {
                     ...m,
-                    stamina: Math.max(0, m.stamina - staminaDrain),
-                    morale: Math.min(100, m.morale + 10), 
-                    singing: Math.min(100, m.singing + Math.floor(skillImprovement * 0.5)),
-                    dancing: Math.min(100, m.dancing + Math.floor(skillImprovement * 0.5)),
-                    fans: m.fans + Math.floor(fanGain / performingMembers.length)
+                    stamina: Math.max(0, (m.stamina || 0) - staminaDrain),
+                    morale: Math.min(100, (m.morale || 0) + 10),
+                    singing: Math.min(100, (m.singing || 0) + Math.floor(skillImprovement * 0.5)),
+                    dancing: Math.min(100, (m.dancing || 0) + Math.floor(skillImprovement * 0.5)),
+                    fans: (m.fans || 0) + Math.floor(fanGain / performingMembers.length)
                 };
             }
             return m;
         };
-        
+
         setMembers(prev => prev.map(applyMemberUpdate));
         setSisterGroups(prev => prev.map(sg => ({
             ...sg,
-            members: sg.members.map(m => applyMemberUpdate(m))
+            members: (sg.members || []).map(m => applyMemberUpdate(m))
         })));
 
 
@@ -960,17 +1140,23 @@ const useIdolManager = () => {
     };
 
 
-    const recordPerformance = (typeData, selectedTracks, selectedMemberIds) => {
+    const recordPerformance = (
+        typeData: PerformanceType,
+        selectedTracks: PerformanceTrackOption[],
+        selectedMemberIds: Array<Member['id']>,
+    ) => {
         if (selectedTracks.length === 0) return setMessage("Must select at least one song to perform.");
         if (selectedMemberIds.length === 0) return setMessage("Must select at least one member to perform.");
         
         const cost = typeData.cost;
         if (money < cost) return setMessage(`Insufficient funds! This performance costs ¥${cost.toLocaleString()}.`);
 
-        const performingMembers = selectedMemberIds.map(getMemberById).filter(m => m && m.isAvailable);
+        const performingMembers = selectedMemberIds
+            .map(memberId => getMemberById(memberId))
+            .filter((m): m is Member => Boolean(m && m.isAvailable));
         if (performingMembers.length === 0) return setMessage("No selected members are available to perform.");
 
-        const avgSkill = performingMembers.reduce((sum, m) => m.singing + m.dancing, 0) / (performingMembers.length * 200);
+        const avgSkill = performingMembers.reduce((sum, m) => sum + ((m.singing || 0) + (m.dancing || 0)), 0) / (performingMembers.length * 200);
         
         // Calculate Impact
         const baseFanGain = totalFans * typeData.fanImpact * (1 + avgSkill);
@@ -990,33 +1176,33 @@ const useIdolManager = () => {
 
         // 2. Update Members (Stamina/Morale/Skill)
         const performingMemberIds = performingMembers.map(m => m.id);
-        
-        const applyMemberUpdate = (m) => {
+
+        const applyMemberUpdate = (m: Member): Member => {
             if (performingMemberIds.some(id => String(id) === String(m.id))) {
                 return {
                     ...m,
-                    stamina: Math.max(0, m.stamina - typeData.staminaDrain),
-                    morale: Math.min(100, m.morale + (typeData.category === 'Charity Stage' ? 15 : 5)), 
-                    singing: Math.min(100, m.singing + Math.floor(skillImprovement * 0.5)),
-                    dancing: Math.min(100, m.dancing + Math.floor(skillImprovement * 0.5)),
-                    fans: m.fans + Math.floor(fanGain / performingMembers.length)
+                    stamina: Math.max(0, (m.stamina || 0) - typeData.staminaDrain),
+                    morale: Math.min(100, (m.morale || 0) + (typeData.category === 'Charity Stage' ? 15 : 5)),
+                    singing: Math.min(100, (m.singing || 0) + Math.floor(skillImprovement * 0.5)),
+                    dancing: Math.min(100, (m.dancing || 0) + Math.floor(skillImprovement * 0.5)),
+                    fans: (m.fans || 0) + Math.floor(fanGain / performingMembers.length)
                 };
             }
             return m;
         };
-        
+
         // Apply update to main members
         setMembers(prev => prev.map(applyMemberUpdate));
-        
+
         // Apply update to sister group members (if they participated as kennin)
         setSisterGroups(prev => prev.map(sg => ({
             ...sg,
-            members: sg.members.map(m => applyMemberUpdate(m))
+            members: (sg.members ?? []).map(m => applyMemberUpdate(m))
         })));
 
 
         // 3. Record History
-        const newEntry = {
+        const newEntry: PerformanceHistoryEntry = {
             id: Date.now(),
             name: typeData.label,
             category: typeData.category,
@@ -1042,7 +1228,7 @@ const useIdolManager = () => {
     // --- End Performance Management Logic ---
     
     // --- Sister Group Transfer Logic ---
-    const handleSisterMemberTransfer = (member, action) => {
+    const handleSisterMemberTransfer = (member: Member, action: 'transfer' | 'kennin') => {
         if (!member.isSister) return setMessage('This action is only for Sister Group members.');
         
         const cost = 50000;
@@ -1059,12 +1245,12 @@ const useIdolManager = () => {
 
         if (action === 'transfer') {
             // 1. Remove from sister group members list
-            setSisterGroups(prev => prev.map(g => 
-                g.id === sgId ? { ...g, members: g.members.filter(m => m.id !== mId) } : g
+          setSisterGroups(prev => prev.map(g =>
+                g.id === sgId ? { ...g, members: (g.members || []).filter(m => m.id !== mId) } : g
             ));
 
             // 2. Add to main group members list
-            const newId = Math.max(0, ...members.map(m => m.id)) + 1;
+          const newId = Math.max(0, ...members.map(m => Number(m.id))) + 1;
             const newMainMember = {
                 ...member,
                 id: newId, // Assign new integer ID
@@ -1107,7 +1293,7 @@ const useIdolManager = () => {
 
     const recruitMember = () => {
       if (money < 20000 || members.length >= 50) return setMessage('Cost ¥20K, max 50 members!');
-      const newId = Math.max(...members.map(m => m.id), 0) + 1;
+        const newId = Math.max(...members.map(m => Number(m.id)), 0) + 1;
       const newName = generateRandomName(); 
       const newMember = {
         id: newId, 
@@ -1125,15 +1311,15 @@ const useIdolManager = () => {
       setMessage(`${newMember.name} recruited!`);
     };
     
-    const recruitSisterGroupMember = (sgId) => {
-      const cost = 10000;
-      const sg = sisterGroups.find(g => g.id === sgId);
-      if (money < cost) return setMessage(`Cost ¥10K, not enough money!`);
-      if (!sg) return setMessage('Sister Group not found.');
-      if (sg.members.length >= 30) return setMessage(`${sg.name} roster is full (max 30).`);
+      const recruitSisterGroupMember = (sgId: SisterGroup['id']) => {
+        const cost = 10000;
+        const sg = sisterGroups.find(g => g.id === sgId);
+        if (money < cost) return setMessage(`Cost ¥10K, not enough money!`);
+        if (!sg || !sg.members) return setMessage('Sister Group not found.');
+        if (sg.members.length >= 30) return setMessage(`${sg.name} roster is full (max 30).`);
 
-      // FIX: Ensure new ID is calculated safely, starting from 1 if no members exist
-      const newId = Math.max(0, ...(sg.members || []).map(m => m.id)) + 1;
+        // FIX: Ensure new ID is calculated safely, starting from 1 if no members exist
+        const newId = Math.max(0, ...sg.members.map(m => Number(m.id))) + 1;
       const newName = generateRandomName(); 
       const newMember = {
           id: newId, name: newName, nickname: newName.split(' ')[0] + '-chan', 
@@ -1154,7 +1340,7 @@ const useIdolManager = () => {
       setMessage(`${newMember.name} recruited into ${sg.name} for ¥${cost.toLocaleString()}.`);
     };
     
-    const handleDisbandSisterGroup = (sgId, independent = false) => {
+        const handleDisbandSisterGroup = (sgId: SisterGroup['id'], independent = false) => {
       const sg = sisterGroups.find(g => g.id === sgId);
       if (!sg) return;
 
@@ -1178,7 +1364,7 @@ const useIdolManager = () => {
     };
 
 
-    const produceMerch = (item, amount) => {
+    const produceMerch = (item: string, amount: number) => {
       const cost = merchProdCost[item] * amount;
       if (money < cost) return setMessage(`Not enough money! Cost: ¥${cost.toLocaleString()}`);
       
@@ -1207,7 +1393,7 @@ const useIdolManager = () => {
       setMessage(`Handshake event success! +${fanGain} fans, but members are exhausted.`);
     };
     
-    const startTrainingCamp = (memberId, skill) => {
+    const startTrainingCamp = (memberId: Member['id'], skill: string) => {
       const cost = 75000;
       if (money < cost) return setMessage(`Special camp costs ¥${cost.toLocaleString()}!`);
       const member = getMemberById(memberId);
@@ -1223,21 +1409,22 @@ const useIdolManager = () => {
     };
     
     const handleTrainingCampReturn = () => {
+      if (!activeTrainingCamp) return '';
       const member = getMemberById(activeTrainingCamp.memberId);
       const skill = activeTrainingCamp.skill;
 
-      updateMemberState(activeTrainingCamp.memberId, m => ({ 
-          ...m, 
+      updateMemberState(activeTrainingCamp.memberId, m => ({
+          ...m,
           isAvailable: true,
-          [skill]: Math.min(100, (m[skill] || 0) + 15) 
+          [skill]: Math.min(100, (m[skill] || 0) + 15)
       }));
-      
+
       const campMessage = `${member?.name || 'A member'} has returned from ${skill} camp with a huge skill boost!`;
       setActiveTrainingCamp(null);
       return campMessage;
     };
-    
-    const startMediaJob = (memberId, strategy) => {
+
+    const startMediaJob = (memberId: Member['id'], strategy: 'safe' | 'standard' | 'risky') => {
       const member = getMemberById(memberId);
       if (!member || !member.isAvailable) return setMessage(member ? `${member.name} is unavailable.` : 'Member not found.');
       
@@ -1271,7 +1458,7 @@ const useIdolManager = () => {
       setShowModal(null);
     };
     
-    const startGroupMediaJob = (jobType) => {
+    const startGroupMediaJob = (jobType: 'music_show' | 'awards_show' | 'variety_program') => {
       const cost = 20000;
       if (money < cost) return setMessage(`This job costs ¥${cost.toLocaleString()}.`);
       const availableMembers = members.filter(m => m.isAvailable).length;
@@ -1354,7 +1541,7 @@ const useIdolManager = () => {
           if (activeTrainingCamp.weeksLeft <= 1) {
               campMessage = handleTrainingCampReturn();
           } else {
-              setActiveTrainingCamp(prev => ({ ...prev, weeksLeft: prev.weeksLeft - 1 }));
+                setActiveTrainingCamp(prev => (prev ? { ...prev, weeksLeft: prev.weeksLeft - 1 } : prev));
               campMessage = `Training camp for ${getMemberById(activeTrainingCamp.memberId)?.name || 'a member'} continues for ${activeTrainingCamp.weeksLeft - 1} more week(s).`;
           }
       }
@@ -1379,17 +1566,17 @@ const useIdolManager = () => {
       setMessage(`Week ${week + 1}: +¥${income.toLocaleString()}. ${campMessage}`);
     };
     
-    const confirmCreateSisterGroup = (groupData) => {
+      const confirmCreateSisterGroup = (groupData: { groupName: string; location: string; }) => {
       const cost = 250000;
       if (money < cost) return setMessage(`Need ¥${cost.toLocaleString()} to establish a new sister group.`);
 
       // FIX: Use a safe calculation for new SG ID
-      const newId = Math.max(0, ...(sisterGroups || []).map(sg => sg.id || 0)) + 1;
+        const newId = Math.max(0, ...(sisterGroups || []).map(sg => Number(sg.id) || 0)) + 1;
       
-      const initialMembers = Array.from({ length: 5 }, (_, i) => {
-          const name = generateRandomName();
-          return {
-              // FIX: Ensure m.id is calculated safely starting from 1
+        const initialMembers: Member[] = Array.from({ length: 5 }, (_, i) => {
+            const name = generateRandomName();
+            return {
+                // FIX: Ensure m.id is calculated safely starting from 1
               id: i + 1,
               name: name,
               nickname: name.split(' ')[0],
@@ -1441,13 +1628,110 @@ const useIdolManager = () => {
 const App = () => {
     // Destructure everything from the custom hook
     const {
-        gameStarted, setGameStarted, groupName, money, week, members, setMembers, selectedMember, setSelectedMember, message, setMessage, totalFans, setTotalFans, currentTab, setCurrentTab, showNotifications, setShowNotifications, notifications, setNotifications, songs, setSongs, teams, setTeams, allSetlists, setAllSetlists, buildings, setBuildings, sisterGroups, setSisterGroups, rivalGroups, setRivalGroups, showModal, setShowModal, modalData, setModalData, selectedSisterGroup, setSelectedSisterGroup, selectedTheaterTeam, setSelectedTheaterTeam, username, setUsername, memberView, setMemberView, merchInventory, merchPrices, merchProdCost, activeTour, venues, performanceHistory, performanceTypes,
+        gameStarted,
+        setGameStarted: _setGameStarted,
+        groupName,
+        money,
+        week,
+        members,
+        setMembers: _setMembers,
+        selectedMember,
+        setSelectedMember,
+        message,
+        setMessage,
+        totalFans,
+        setTotalFans,
+        currentTab,
+        setCurrentTab,
+        showNotifications,
+        setShowNotifications,
+        notifications,
+        setNotifications,
+        songs,
+        setSongs: _setSongs,
+        teams,
+        setTeams: _setTeams,
+        allSetlists,
+        setAllSetlists: _setAllSetlists,
+        buildings,
+        setBuildings: _setBuildings,
+        sisterGroups,
+        setSisterGroups: _setSisterGroups,
+        rivalGroups: _rivalGroups,
+        setRivalGroups: _setRivalGroups,
+        showModal,
+        setShowModal,
+        modalData,
+        setModalData,
+        selectedSisterGroup,
+        setSelectedSisterGroup,
+        selectedTheaterTeam,
+        setSelectedTheaterTeam,
+        username,
+        setUsername: _setUsername,
+        memberView,
+        setMemberView,
+        merchInventory,
+        merchPrices: _merchPrices,
+        merchProdCost,
+        activeTour,
+        venues,
+        performanceHistory: _performanceHistory,
+        performanceTypes,
         // Firebase/Persistence
-        db, userId, isAuthReady, saveGame, loadGame,
+        db: _db,
+        userId,
+        isAuthReady,
+        saveGame,
+        loadGame,
         // Utilities
-        startGame, getAllAvailableMembers, getMemberById, updateMemberState, generateRandomName, getMemberGroupStatus, getMemberRank, addNotification, getMainGroupRoster,
+        startGame,
+        getAllAvailableMembers,
+        getMemberById,
+        updateMemberState,
+        generateRandomName: _generateRandomName,
+        getMemberGroupStatus,
+        getMemberRank,
+        addNotification,
+        getMainGroupRoster,
         // Logic
-        trainMember, restMember, restAllTired, buildTheater, upgradePracticeRoom, startTour, progressTour, createTeam, editTeam, deleteTeam, startTheaterShowPrep, startLargeConcertPrep, graduateMember, holdTheaterShow, holdSisterGroupShow, holdLargeConcert, holdElection, createSong, createCustomSetlist, confirmCreateSetlist, confirmCreateSong, recruitMember, recruitSisterGroupMember, handleDisbandSisterGroup, produceMerch, startHandshakeEvent, startTrainingCamp, startMediaJob, startGroupMediaJob, nextWeek, confirmCreateSisterGroup, handleSisterMemberTransfer, recordPerformance, startPerformancePrep, confirmCreateTeam, confirmEditTeam, holdMajorConcert
+        trainMember,
+        restMember,
+        restAllTired,
+        buildTheater,
+        upgradePracticeRoom,
+        startTour,
+        progressTour,
+        createTeam,
+        editTeam,
+        deleteTeam,
+        startTheaterShowPrep,
+        startLargeConcertPrep: _startLargeConcertPrep,
+        graduateMember,
+        holdTheaterShow,
+        holdSisterGroupShow,
+        holdLargeConcert: _holdLargeConcert,
+        holdElection,
+        createSong,
+        createCustomSetlist,
+        confirmCreateSetlist,
+        confirmCreateSong,
+        recruitMember,
+        recruitSisterGroupMember,
+        handleDisbandSisterGroup,
+        produceMerch,
+        startHandshakeEvent,
+        startTrainingCamp,
+        startMediaJob,
+        startGroupMediaJob,
+        nextWeek,
+        confirmCreateSisterGroup,
+        handleSisterMemberTransfer,
+        recordPerformance,
+        startPerformancePrep,
+        confirmCreateTeam,
+        confirmEditTeam,
+        holdMajorConcert,
     } = useIdolManager();
 
     // Local state for start screen inputs (not part of the main game state in the hook)
@@ -1467,16 +1751,16 @@ const App = () => {
     const handleStartGame = () => startGame(startUsername, startGroupName);
     
     // Pass necessary data to the hook's save/load functions
-    const handleSaveGame = (gameUsername) => saveGame(gameUsername, userId);
-    const handleLoadGame = (gameUsername) => loadGame(gameUsername, userId, setStartUsername, setStartGroupName);
+    const handleSaveGame = (gameUsername: string) => saveGame(gameUsername, userId);
+    const handleLoadGame = (gameUsername: string) => loadGame(gameUsername, userId, setStartUsername, setStartGroupName);
 
 
     // --- MODAL COMPONENTS (Remain in App for clean state access) ---
 
-    const MemberSelectionList = ({ members, selectedIds, toggleMember, disabled = false }) => (
-      <div className="max-h-40 overflow-y-auto border p-2 rounded bg-gray-50">
-        {(members || []).map(member => (
-          <div 
+    const MemberSelectionList = ({ members, selectedIds, toggleMember, disabled = false }: MemberSelectionListProps) => (
+        <div className="max-h-40 overflow-y-auto border p-2 rounded bg-gray-50">
+          {(members || []).map(member => (
+            <div
             key={member.id} 
             className={`p-1 text-sm flex justify-between items-center cursor-pointer rounded ${selectedIds.map(String).includes(String(member.id)) ? 'bg-blue-200' : 'hover:bg-gray-100'} ${member.isSister ? 'italic text-gray-700' : ''}`} 
             onClick={() => !disabled && toggleMember(member.id)}
@@ -1488,10 +1772,10 @@ const App = () => {
       </div>
     );
 
-    const ModalWrapper = ({ title, children, maxWidth = 'max-w-md' }) => (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div className={`bg-white rounded-lg p-6 w-full ${maxWidth} max-h-[90vh] overflow-y-auto shadow-2xl animate-in fade-in slide-in-from-bottom-4`}>
-          <div className="flex justify-between items-start mb-4">
+    const ModalWrapper = ({ title, children, maxWidth = 'max-w-md' }: { title: ReactNode; children: ReactNode; maxWidth?: string; }) => (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className={`bg-white rounded-lg p-6 w-full ${maxWidth} max-h-[90vh] overflow-y-auto shadow-2xl animate-in fade-in slide-in-from-bottom-4`}>
+            <div className="flex justify-between items-start mb-4">
             <h3 className="text-2xl font-bold">{title}</h3>
             <button onClick={() => setShowModal(null)} className="text-gray-500 hover:text-gray-800"><X size={24} /></button>
           </div>
@@ -1567,7 +1851,7 @@ const App = () => {
       const { member, type } = modalData;
       if (!member) return null;
 
-      const handleChoice = (choice) => {
+      const handleChoice = (choice: 'apologize' | 'deny' | 'ignore') => {
           let messageText = '';
           let fanChange = 0;
           let moraleChange = 0;
@@ -1637,10 +1921,10 @@ const App = () => {
     const CreateSongModal = () => { 
       const { targetGroupId } = modalData; 
       
-      const allGroups = [{ id: 'main', name: groupName, isSister: false }, ...(sisterGroups || []).map(sg => ({ id: sg.id, name: sg.name, isSister: true }))];
-      const [targetGroup, setTargetGroup] = useState(targetGroupId || allGroups[0].name);
+        const allGroups = [{ id: 'main', name: groupName, isSister: false }, ...(sisterGroups || []).map(sg => ({ id: sg.id, name: sg.name, isSister: true }))];
+        const [targetGroup, setTargetGroup] = useState(targetGroupId || allGroups[0].name);
 
-      let selectableMembers = [];
+        let selectableMembers: Member[] = [];
       if (targetGroup === 'main') {
           const mainMembers = members.filter(m => m.homeGroup === 'main' && m.isAvailable);
           const sgMembers = getAllAvailableMembers(true).filter(m => m.isSister && (m.kenninGroups || []).includes('main'));
@@ -1665,20 +1949,20 @@ const App = () => {
       
 
       const [songName, setSongName] = useState('');
-      const [tracks, setTracks] = useState([
-          { name: 'Title Track', type: 'title', members: [], center: null },
-          { name: 'B-Side 1', type: 'b-side', members: [], center: null }
-      ]);
-      const [selectedTrackIndex, setSelectedTrackIndex] = useState(0);
+        const [tracks, setTracks] = useState<EditableTrack[]>([
+            { name: 'Title Track', type: 'title', members: [] as string[], center: null },
+            { name: 'B-Side 1', type: 'b-side', members: [] as string[], center: null }
+        ]);
+        const [selectedTrackIndex, setSelectedTrackIndex] = useState(0);
 
-      const updateTrackName = (index, newName) => {
-        setTracks(prev => (prev || []).map((track, i) => i === index ? { ...track, name: newName } : track));
-      };
+        const updateTrackName = (index: number, newName: string) => {
+          setTracks(prev => (prev || []).map((track, i) => i === index ? { ...track, name: newName } : track));
+        };
 
-      const toggleMember = (memberId) => {
-          setTracks(prev => (prev || []).map((track, index) => {
-              if (index === selectedTrackIndex) {
-                  const memberIdStr = String(memberId);
+        const toggleMember = (memberId: Member['id']) => {
+            setTracks(prev => (prev || []).map((track, index) => {
+                if (index === selectedTrackIndex) {
+                    const memberIdStr = String(memberId);
                   const newMembers = (track.members || []).map(String).includes(memberIdStr)
                       ? (track.members || []).filter(id => String(id) !== memberIdStr)
                       : [...(track.members || []).map(String), memberIdStr];
@@ -1691,13 +1975,13 @@ const App = () => {
                   return { ...track, members: newMembers, center: newCenter };
               }
               return track;
-          }));
-      };
-      
-      const setCenter = (memberId) => {
-          setTracks(prev => (prev || []).map((track, index) => {
-              if (index === selectedTrackIndex) {
-                  const memberIdStr = String(memberId);
+        }));
+        };
+
+        const setCenter = (memberId: Member['id']) => {
+            setTracks(prev => (prev || []).map((track, index) => {
+                if (index === selectedTrackIndex) {
+                    const memberIdStr = String(memberId);
                   if ((track.members || []).map(String).includes(memberIdStr)) {
                        return { ...track, center: String(track.center) === memberIdStr ? null : memberIdStr };
                   }
@@ -1706,16 +1990,16 @@ const App = () => {
           }));
       };
       
-      const addTrack = () => {
-          setTracks(prev => [
-              ...(prev || []),
-              { 
-                  name: `B-Side ${prev.length}`, 
-                  type: 'b-side', 
-                  members: [], 
-                  center: null 
-              }
-          ]);
+        const addTrack = () => {
+            setTracks(prev => [
+                ...(prev || []),
+                {
+                    name: `B-Side ${prev.length}`,
+                    type: 'b-side',
+                    members: [] as string[],
+                    center: null
+                }
+            ]);
           setSelectedTrackIndex((tracks || []).length); 
       };
 
@@ -1834,14 +2118,14 @@ const App = () => {
       );
     };
     
-    const SingleDetailsModal = () => { 
-      const single = modalData;
-      if (!single) return null;
-      
-      const memberMap = getAllAvailableMembers(true).reduce((map, m) => {
-          map[String(m.id)] = m.name;
-          return map;
-      }, {});
+      const SingleDetailsModal = () => {
+        const single = modalData as Song | null;
+        if (!single) return null;
+
+        const memberMap = getAllAvailableMembers(true).reduce<Record<string, string>>((map, m) => {
+            map[String(m.id)] = m.name;
+            return map;
+        }, {});
 
       return (
           <ModalWrapper title={`${single.name} Single`} maxWidth="max-w-2xl">
@@ -1849,24 +2133,27 @@ const App = () => {
 
               <h4 className="font-semibold text-lg mb-3 border-t pt-3 flex items-center"><Music size={18} className="mr-2"/> Track Listing ({single.totalTracks})</h4>
               <div className="space-y-3">
-                  {(single.tracks || []).map((track, index) => (
-                      <div key={index} className="p-3 border rounded bg-white shadow-sm">
-                          <div className="flex justify-between items-center">
-                              <span className="font-bold">{track.name}</span>
-                              <span className={`text-xs px-2 py-0.5 rounded-full ${track.type === 'title' ? 'bg-red-200 text-red-800' : 'bg-green-200 text-green-800'}`}>{track.type.toUpperCase()}</span>
-                          </div>
-                          <p className="text-sm mt-1">
-                              Center: <span className="font-medium">{memberMap[String(track.center)] || 'N/A'}</span>
-                          </p>
-                          <p className="text-sm text-gray-700 mt-1">
-                              Senbatsu ({(track.members || []).length}): ({(track.members || []).map(id => memberMap[String(id)]).join(', ')})
-                          </p>
-                      </div>
-                  ))}
-              </div>
-          </ModalWrapper>
-      );
-    };
+                    {(single.tracks || []).map((track, index) => {
+                        const trackType = (track.type || 'track').toUpperCase();
+                        return (
+                            <div key={index} className="p-3 border rounded bg-white shadow-sm">
+                                <div className="flex justify-between items-center">
+                                    <span className="font-bold">{track.name}</span>
+                                <span className={`text-xs px-2 py-0.5 rounded-full ${track.type === 'title' ? 'bg-red-200 text-red-800' : 'bg-green-200 text-green-800'}`}>{trackType}</span>
+                                </div>
+                                <p className="text-sm mt-1">
+                                    Center: <span className="font-medium">{memberMap[String(track.center)] || 'N/A'}</span>
+                                </p>
+                                <p className="text-sm text-gray-700 mt-1">
+                                    Senbatsu ({(track.members || []).length}): ({(track.members || []).map(id => memberMap[String(id)]).join(', ')})
+                                </p>
+                            </div>
+                        );
+                    })}
+                </div>
+            </ModalWrapper>
+        );
+      };
 
     const TheaterShowPrepModal = () => { 
       const [theme, setTheme] = useState('classic');
@@ -1902,19 +2189,19 @@ const App = () => {
     };
     
     // NEW: Performance Selection Modal (Consolidates large concerts/tours)
-    const PerformanceModal = () => {
-        const [selectedTypeLabel, setSelectedTypeLabel] = useState(null);
-        const [selectedTracks, setSelectedTracks] = useState([]);
-        const [selectedMembers, setSelectedMembers] = useState([]);
+      const PerformanceModal = () => {
+          const [selectedTypeLabel, setSelectedTypeLabel] = useState<string | null>(null);
+          const [selectedTracks, setSelectedTracks] = useState<PerformanceTrackOption[]>([]);
+          const [selectedMembers, setSelectedMembers] = useState<Array<Member['id']>>([]);
         const [filterCategory, setFilterCategory] = useState('All');
 
-        const allTracks = songs.flatMap(s => (s.tracks || []).map(t => ({
-            id: `${s.id}-${t.name}-${s.targetGroup}`, // Unique ID based on single ID, track name, and group
-            name: `${t.name} (Single: ${s.name} - ${s.targetGroup === 'main' ? groupName : s.targetGroup})`,
-            singleName: s.name,
-            group: s.targetGroup,
-            isTitle: t.type === 'title',
-        })));
+          const allTracks: PerformanceTrackOption[] = songs.flatMap((s) => (s.tracks ?? []).map((t) => ({
+              id: `${s.id}-${t.name}-${s.targetGroup}`, // Unique ID based on single ID, track name, and group
+              name: `${t.name} (Single: ${s.name} - ${s.targetGroup === 'main' ? groupName : s.targetGroup})`,
+              singleName: s.name,
+              group: s.targetGroup,
+              isTitle: t.type === 'title',
+          })));
         
         const availableMembers = getAllAvailableMembers(true); 
         const categories = ['All', ...new Set(performanceTypes.map(p => p.category))];
@@ -1924,24 +2211,24 @@ const App = () => {
             
         const selectedTypeData = performanceTypes.find(p => p.label === selectedTypeLabel);
         
-        const toggleTrack = (trackId) => {
-            setSelectedTracks(prev => {
-                const isSelected = prev.some(t => t.id === trackId);
-                const track = allTracks.find(t => t.id === trackId);
-                if (!track) return prev;
-                
-                return isSelected 
-                    ? prev.filter(t => t.id !== trackId) 
-                    : [...prev, track];
-            });
-        };
-        
-        const toggleMember = (memberId) => {
-            setSelectedMembers(prev => prev.map(String).includes(String(memberId))
-                ? prev.filter(id => String(id) !== String(memberId))
-                : [...prev, memberId]
-            );
-        };
+          const toggleTrack = (trackId: string) => {
+              setSelectedTracks(prev => {
+                  const isSelected = prev.some(t => t.id === trackId);
+                  const track = allTracks.find(t => t.id === trackId);
+                  if (!track) return prev;
+
+                  return isSelected
+                      ? prev.filter(t => t.id !== trackId)
+                      : [...prev, track];
+              });
+          };
+
+          const toggleMember = (memberId: Member['id']) => {
+              setSelectedMembers(prev => prev.map(String).includes(String(memberId))
+                  ? prev.filter(id => String(id) !== String(memberId))
+                  : [...prev, memberId]
+              );
+          };
 
         const executePerformance = () => {
             if (!selectedTypeData) return setMessage("Please select a performance type.");
@@ -2031,21 +2318,21 @@ const App = () => {
     };
     
     // NEW: Major Concert Modal
-    const MajorConcertModal = () => {
-        const [selectedVenueId, setSelectedVenueId] = useState(venues[1]?.id || '');
-        const [selectedSetlistId, setSelectedSetlistId] = useState('');
-        const [selectedMembers, setSelectedMembers] = useState([]);
-        
-        const selectedVenue = venues.find(v => v.id === selectedVenueId);
-        const selectedSetlist = allSetlists.find(sl => sl.id === selectedSetlistId);
+      const MajorConcertModal = () => {
+          const [selectedVenueId, setSelectedVenueId] = useState<Venue['id'] | null>(venues[1]?.id ?? null);
+          const [selectedSetlistId, setSelectedSetlistId] = useState<Setlist['id'] | null>(null);
+          const [selectedMembers, setSelectedMembers] = useState<Array<Member['id']>>([]);
+
+          const selectedVenue = selectedVenueId != null ? venues.find(v => v.id === selectedVenueId) : undefined;
+          const selectedSetlist = selectedSetlistId != null ? allSetlists.find(sl => sl.id === selectedSetlistId) : undefined;
         const availableMembers = getAllAvailableMembers(true); 
         
-        const toggleMember = (memberId) => {
-            setSelectedMembers(prev => prev.map(String).includes(String(memberId))
-                ? prev.filter(id => String(id) !== String(memberId))
-                : [...prev, memberId]
-            );
-        };
+          const toggleMember = (memberId: Member['id']) => {
+              setSelectedMembers(prev => prev.map(String).includes(String(memberId))
+                  ? prev.filter(id => String(id) !== String(memberId))
+                  : [...prev, memberId]
+              );
+          };
         
         const handleConfirm = () => {
             if (!selectedVenue || !selectedSetlist) return setMessage("Must select a venue and a setlist.");
@@ -2065,8 +2352,11 @@ const App = () => {
                     <div className="col-span-1 space-y-3">
                         <h4 className="font-semibold mb-1">1. Select Venue (Capacity)</h4>
                         <select 
-                            value={selectedVenueId}
-                            onChange={(e) => setSelectedVenueId(parseInt(e.target.value))}
+                              value={selectedVenueId ?? ''}
+                              onChange={(e) => {
+                                  const value = e.target.value;
+                                  setSelectedVenueId(value ? parseInt(value, 10) : null);
+                              }}
                             className="w-full p-2 border rounded"
                         >
                             <option value="">-- Select Venue --</option>
@@ -2086,8 +2376,11 @@ const App = () => {
                         
                         <h4 className="font-semibold mb-1 pt-2">2. Select Setlist</h4>
                         <select 
-                            value={selectedSetlistId}
-                            onChange={(e) => setSelectedSetlistId(parseInt(e.target.value))}
+                              value={selectedSetlistId ?? ''}
+                              onChange={(e) => {
+                                  const value = e.target.value;
+                                  setSelectedSetlistId(value ? parseInt(value, 10) : null);
+                              }}
                             className="w-full p-2 border rounded"
                         >
                             <option value="">-- Select Setlist --</option>
@@ -2192,20 +2485,22 @@ const App = () => {
     };
     
     const RenameMemberModal = () => {
-        const member = modalData;
+        const member = modalData as Member | null;
         const [newName, setNewName] = useState(member?.name || '');
         const [newNickname, setNewNickname] = useState(member?.nickname || '');
+
+        if (!member) return null;
         
         const handleConfirm = () => {
             if (!newName.trim()) return setMessage("Name cannot be empty.");
             
-            updateMemberState(member.id, m => ({ 
-                ...m, 
-                name: newName.trim(), 
-                nickname: newNickname.trim() 
+            updateMemberState(member.id, m => ({
+                ...m,
+                name: newName.trim(),
+                nickname: newNickname.trim()
             }));
             setMessage(`${member.name}'s name changed to ${newName.trim()}!`);
-            setSelectedMember(prev => ({ ...prev, name: newName.trim(), nickname: newNickname.trim() }));
+            setSelectedMember(prev => (prev ? { ...prev, name: newName.trim(), nickname: newNickname.trim() } : prev));
             setShowModal(null);
         };
 
@@ -2243,7 +2538,7 @@ const App = () => {
     
     const CreateTeamModal = () => {
         const [teamName, setTeamName] = useState('');
-        const [selectedMembers, setSelectedMembers] = useState([]);
+        const [selectedMembers, setSelectedMembers] = useState<Array<Member['id']>>([]);
         const [selectedSetlistId, setSelectedSetlistId] = useState('');
         
         const availableMembers = members.filter(m => m.homeGroup === 'main' && m.isAvailable).map(m => ({
@@ -2251,8 +2546,8 @@ const App = () => {
             name: m.name,
             isSister: false,
         }));
-        
-        const toggleMember = (memberId) => {
+
+        const toggleMember = (memberId: Member['id']) => {
             setSelectedMembers(prev => prev.map(String).includes(String(memberId))
                 ? prev.filter(id => String(id) !== String(memberId))
                 : [...prev, memberId]
@@ -2314,10 +2609,13 @@ const App = () => {
     };
     
     const EditTeamModal = () => {
-        const team = modalData;
-        const [teamName, setTeamName] = useState(team?.name || '');
-        const [selectedMembers, setSelectedMembers] = useState(team?.members || []);
-        const [selectedSetlistId, setSelectedSetlistId] = useState(team?.currentSetlistId || '');
+        const team = modalData as Team | null;
+
+        if (!team) return null;
+
+        const [teamName, setTeamName] = useState(team.name || '');
+        const [selectedMembers, setSelectedMembers] = useState<Array<Member['id']>>(team.members || []);
+        const [selectedSetlistId, setSelectedSetlistId] = useState(team.currentSetlistId?.toString() || '');
         
         const availableMembers = members.filter(m => m.homeGroup === 'main' && m.isAvailable).map(m => ({
             id: m.id,
@@ -2325,7 +2623,7 @@ const App = () => {
             isSister: false,
         }));
         
-        const toggleMember = (memberId) => {
+        const toggleMember = (memberId: Member['id']) => {
             setSelectedMembers(prev => prev.map(String).includes(String(memberId))
                 ? prev.filter(id => String(id) !== String(memberId))
                 : [...prev, memberId]
@@ -2398,13 +2696,13 @@ const App = () => {
     
     // --- Existing modals with missing functions that will be added in future steps ---
     const MoveMemberModal = () => {
-        const member = modalData;
+        const member = modalData as Member | null;
         const [targetGroup, setTargetGroup] = useState(member?.homeGroup === 'main' ? 'main' : member?.homeGroup);
         const isSister = member?.isSister;
-        
+
         if (!member) return null;
 
-        const handleConfirm = (action) => {
+        const handleConfirm = (action: 'transfer' | 'kennin') => {
             if (isSister) {
                 // Sister group member transfer/kennin logic is already handled in the hook
                 handleSisterMemberTransfer(member, action);
@@ -2520,7 +2818,7 @@ const App = () => {
     };
 
     const GroupMediaModal = () => {
-        const jobs = [
+        const jobs: Array<{ id: 'music_show' | 'awards_show' | 'variety_program'; name: string; members: number; multiplier: number }> = [
             { id: 'music_show', name: 'Major Music Show', members: 7, multiplier: 1.5 },
             { id: 'awards_show', name: 'Year-End Awards Show', members: 16, multiplier: 3 },
             { id: 'variety_program', name: 'Popular Variety Program', members: 5, multiplier: 1 },
@@ -2684,14 +2982,12 @@ const App = () => {
 
     // --- END NEW MODALS ---
 
-    const MemberParticipationHistory = ({ member }) => { 
-      
-      const songHistory = (member.songsParticipation || []);
-      const centerHistory = (member.centerHistory || []);
-      
-      const memberPerformances = performanceHistory.filter(p => p.members.includes(member.name));
-      const titleTrackHistory = songHistory.filter(s => s.type === 'title');
+    const MemberParticipationHistory = ({ member }: { member: Member }) => {
 
+      const songHistory = (member.songsParticipation || []) as AnyRecord[];
+      const centerHistory = (member.centerHistory || []) as AnyRecord[];
+
+      const titleTrackHistory = songHistory.filter((s) => s.type === 'title');
 
       return (
           <div className="mt-4 border-t pt-4">
@@ -2713,7 +3009,7 @@ const App = () => {
               <p className="text-sm font-medium text-gray-700 mt-3 flex items-center"><Music size={14} className='mr-1 text-green-500'/> B-Side Tracks ({songHistory.length - titleTrackHistory.length}):</p>
               <div className="max-h-24 overflow-y-auto text-xs space-y-1 mb-2 p-1 border rounded bg-green-50">
                   {(songHistory.length - titleTrackHistory.length) === 0 && <p className="text-gray-500 italic p-1">No B-side track positions.</p>}
-                  {songHistory.filter(s => s.type === 'b-side').slice(-5).reverse().map((entry, index) => (
+                  {songHistory.filter((s) => s.type === 'b-side').slice(-5).reverse().map((entry, index) => (
                       <div key={index} className="p-1 rounded bg-green-100 border border-green-300">
                           <p className="font-bold text-green-800">{entry.songName}</p>
                           <p className="text-gray-600">Single: {entry.singleName} (Group: {entry.group})</p>
@@ -2739,8 +3035,8 @@ const App = () => {
     const PyramidRanking = () => {
       // Use the combined roster for ranking
       const sortedMembers = getMainGroupRoster();
-      
-      const tiers = {
+
+      const tiers: Record<string, Member[]> = {
           'Center (#1)': sortedMembers.slice(0, 1),
           'Front Row (#2-3)': sortedMembers.slice(1, 3),
           'Middle Row (#4-7)': sortedMembers.slice(3, 7),
@@ -2748,7 +3044,7 @@ const App = () => {
           'Under Girls (#17+)': sortedMembers.slice(16),
       };
 
-      const tierColors = {
+      const tierColors: Record<string, string> = {
           'Center (#1)': 'bg-yellow-500 text-yellow-900',
           'Front Row (#2-3)': 'bg-red-400 text-white',
           'Middle Row (#4-7)': 'bg-indigo-400 text-white',
@@ -2756,34 +3052,36 @@ const App = () => {
           'Under Girls (#17+)': 'bg-gray-300 text-gray-800',
       };
 
-      const maxTierMembers = Math.max(1, ...Object.values(tiers).slice(0, 4).map(t => (t || []).length));
-      const baseWidth = 300; 
+      const maxTierMembers = Math.max(1, ...Object.values(tiers).slice(0, 4).map((t) => (t || []).length));
+      const baseWidth = 300;
 
-      const renderTier = (tierName, tierMembers) => {
+      const renderTier = (tierName: string, tierMembers: Member[]) => {
           if ((tierMembers || []).length === 0) return null;
 
           const memberCount = tierMembers.length;
-          const widthPercentage = tierName === 'Under Girls (#17+)' 
+          const widthPercentage = tierName === 'Under Girls (#17+)'
               ? 1
               : (memberCount / maxTierMembers);
-              
-          const widthStyle = { 
-              width: tierName === 'Under Girls (#17+)' ? '100%' : `${widthPercentage * 100}%`, 
-              minWidth: '50px', 
-              maxWidth: `${baseWidth + (tierName === 'Under Girls (#17+)' ? 100 : 0)}px` 
+
+          const widthStyle = {
+              width: tierName === 'Under Girls (#17+)' ? '100%' : `${widthPercentage * 100}%`,
+              minWidth: '50px',
+              maxWidth: `${baseWidth + (tierName === 'Under Girls (#17+)' ? 100 : 0)}px`
           };
+
+          const tierColor = tierColors[tierName] || 'bg-gray-300 text-gray-800';
 
           return (
               <div key={tierName} className="flex flex-col items-center mb-4 w-full">
-                <div 
-                    className={`p-1 rounded-t-lg shadow-lg text-xs font-bold w-full text-center ${tierColors[tierName]} transition-all duration-300`} 
+                <div
+                    className={`p-1 rounded-t-lg shadow-lg text-xs font-bold w-full text-center ${tierColor} transition-all duration-300`}
                     style={widthStyle}
                 >
                     {tierName} ({memberCount})
                 </div>
                 <div className="flex justify-center flex-wrap gap-1 p-2 bg-white w-full rounded-b-lg shadow-md border" style={widthStyle}>
-                    {(tierMembers || []).map((m, index) => (
-                        <div key={m.id} 
+                    {(tierMembers || []).map((m: Member) => (
+                        <div key={m.id}
                              onClick={() => { setSelectedMember(m); setMemberView('list'); }}
                              className={`cursor-pointer text-center p-1 rounded-full text-xs font-medium border-2 hover:border-blue-500 transition-colors ${tierName === 'Center (#1)' ? 'bg-yellow-200 border-yellow-700' : 'bg-gray-100 border-gray-300'}`}
                              title={`${m.name} (#${getMemberRank(m)} | ${(m.fans || 0).toLocaleString()} fans)`}
@@ -2817,7 +3115,7 @@ const App = () => {
     const SisterGroupManagement = () => {
         const initialSGId = sisterGroups[0]?.id || null;
         const [currentSisterGroup, setCurrentSisterGroup] = useState(selectedSisterGroup || initialSGId);
-        const selectedGroup = sisterGroups.find(sg => sg.id === currentSisterGroup);
+          const selectedGroup = sisterGroups.find(sg => sg.id === currentSisterGroup);
         
         useEffect(() => {
           if (sisterGroups.length > 0 && (!currentSisterGroup || !selectedGroup)) {
@@ -2842,11 +3140,11 @@ const App = () => {
             );
         }
         
-        const sisterMemberRank = (member, membersList) => {
-            return [...(membersList || [])].sort((a, b) => (b.fans || 0) - (a.fans || 0)).findIndex(m => m.id === member.id) + 1;
-        };
-        
-        const handleSelectSGMember = (member, sgId) => {
+          const sisterMemberRank = (member: Member, membersList: Member[] = []): number => {
+              return [...membersList].sort((a, b) => (b.fans || 0) - (a.fans || 0)).findIndex(m => m.id === member.id) + 1;
+          };
+
+        const handleSelectSGMember = (member: Member, sgId: SisterGroup['id']) => {
           const sg = sisterGroups.find(g => g.id === sgId);
           setSelectedMember({
               ...member,
@@ -2869,10 +3167,10 @@ const App = () => {
             <div className="bg-white p-4 rounded-lg shadow-md">
                 <h2 className="text-xl font-semibold mb-3 flex items-center"><Globe size={20} className="mr-2"/> Sister Group Management</h2>
                 
-                <select 
+                <select
                     value={currentSisterGroup || ''}
-                    onChange={(e) => {
-                      const newId = parseInt(e.target.value);
+                    onChange={(e: ChangeEvent<HTMLSelectElement>) => {
+                      const newId = parseInt(e.target.value, 10);
                       setCurrentSisterGroup(newId);
                       setSelectedSisterGroup(newId);
                     }}
@@ -2885,11 +3183,11 @@ const App = () => {
 
                 {selectedGroup && (
                     <div>
-                        <div className='flex justify-between items-center mb-3 p-3 bg-blue-50 rounded-lg'>
-                            <div>
-                                <p className='font-bold text-lg'>{selectedGroup.name}</p>
-                                <p className="text-sm text-gray-600">Fans: {selectedGroup.fans.toLocaleString()} | Weekly Income: ¥{selectedGroup.income.toLocaleString()}</p>
-                            </div>
+                          <div className='flex justify-between items-center mb-3 p-3 bg-blue-50 rounded-lg'>
+                              <div>
+                                  <p className='font-bold text-lg'>{selectedGroup.name}</p>
+                                  <p className="text-sm text-gray-600">Fans: {(selectedGroup.fans ?? 0).toLocaleString()} | Weekly Income: ¥{(selectedGroup.income ?? 0).toLocaleString()}</p>
+                              </div>
                             <div className='flex gap-2'>
                                 <button onClick={() => holdSisterGroupShow(selectedGroup.id)} className="px-3 py-1 bg-yellow-500 text-white text-sm rounded-md shadow-sm">
                                   Show (¥10k)
@@ -2904,17 +3202,17 @@ const App = () => {
                             </div>
                         </div>
 
-                        <h4 className="font-semibold mb-2">Member Roster ({selectedGroup.members.length})</h4>
-                        <div className="max-h-80 overflow-y-auto space-y-2">
-                            {(selectedGroup.members || []).sort((a, b) => sisterMemberRank(a, selectedGroup.members) - sisterMemberRank(b, selectedGroup.members)).map(m => (
+                          <h4 className="font-semibold mb-2">Member Roster ({selectedGroup.members?.length ?? 0})</h4>
+                          <div className="max-h-80 overflow-y-auto space-y-2">
+                              {(selectedGroup.members || []).sort((a, b) => sisterMemberRank(a, selectedGroup.members || []) - sisterMemberRank(b, selectedGroup.members || [])).map(m => (
                                 <div key={m.id} 
-                                     className={`p-3 border rounded bg-gray-50 flex justify-between items-center cursor-pointer ${selectedMember && String(selectedMember.id) === `sg-${selectedGroup.id}-${m.id}` ? 'border-2 border-blue-500 ring-2 ring-blue-200 bg-blue-50' : 'hover:bg-gray-100'}`}
-                                     onClick={() => handleSelectSGMember(m, selectedGroup.id)}
+                                    className={`p-3 border rounded bg-gray-50 flex justify-between items-center cursor-pointer ${selectedMember && String(selectedMember.id) === `sg-${selectedGroup.id}-${m.id}` ? 'border-2 border-blue-500 ring-2 ring-blue-200 bg-blue-50' : 'hover:bg-gray-100'}`}
+                                    onClick={() => handleSelectSGMember(m, selectedGroup.id)}
                                 >
                                     <div>
                                         <span className="font-bold">{m.name} {m.kenninGroups?.includes('main') ? '(Kennin)' : ''}</span>
                                         <p className="text-xs text-gray-600">
-                                            Rank: #{sisterMemberRank(m, selectedGroup.members)} | Variety: {m.variety}
+                                            Rank: #{sisterMemberRank(m, selectedGroup.members || [])} | Variety: {m.variety}
                                         </p>
                                     </div>
                                     <button className="p-1 bg-yellow-400 text-white rounded text-xs">
@@ -2931,23 +3229,26 @@ const App = () => {
 
 
     // --- STYLES/HELPERS ---
-    const StatBar = ({ label, value, max = 100, color = 'bg-blue-500' }) => (
-      <div className="mb-1">
-        <div className="flex justify-between text-xs font-semibold mb-0.5">
-          <span>{label}</span>
-          <span>{value} / {max}</span>
+    const StatBar = ({ label, value, max = 100, color = 'bg-blue-500' }: { label: string; value: number | undefined; max?: number; color?: string }) => {
+      const safeValue = value ?? 0;
+      return (
+        <div className="mb-1">
+          <div className="flex justify-between text-xs font-semibold mb-0.5">
+            <span>{label}</span>
+            <span>{safeValue} / {max}</span>
+          </div>
+          <div className="w-full bg-gray-200 rounded-full h-2">
+            <div className={color + " h-2 rounded-full"} style={{ width: `${(safeValue / max) * 100}%` }}></div>
+          </div>
         </div>
-        <div className="w-full bg-gray-200 rounded-full h-2">
-          <div className={color + " h-2 rounded-full"} style={{ width: `${((value || 0) / max) * 100}%` }}></div>
-        </div>
-      </div>
-    );
+      );
+    };
 
-    const TabButton = ({ id, label, icon: Icon }) => (
+    const TabButton = ({ id, label, icon: Icon }: { id: string; label: string; icon: ComponentType<{ size?: number }> }) => (
       <button
         onClick={() => {
           setCurrentTab(id);
-          setSelectedMember(null); 
+          setSelectedMember(null);
         }}
         className={`flex-1 p-3 text-sm font-medium flex flex-col items-center gap-1 ${currentTab === id ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
       >
@@ -3074,7 +3375,7 @@ const App = () => {
                             <StatBar label="Singing" value={m.singing} color="bg-blue-500" />
                             <StatBar label="Dancing" value={m.dancing} color="bg-green-500" />
                             <StatBar label="Variety" value={m.variety} color="bg-pink-500" />
-                            <StatBar label="Stamina" value={m.stamina} color={m.stamina < 30 ? "bg-red-500" : "bg-gray-400"} />
+                            <StatBar label="Stamina" value={m.stamina} color={(m.stamina ?? 0) < 30 ? "bg-red-500" : "bg-gray-400"} />
                             <StatBar label="Morale" value={m.morale} color="bg-purple-500" />
                           </div>
                         </div>
@@ -3101,9 +3402,9 @@ const App = () => {
                   <div className="flex flex-col gap-2">
                     <h4 className='font-bold text-gray-700 mt-2 mb-1 flex items-center'><Home size={16} className='mr-1 text-red-500'/> Theater Shows:</h4>
                     <div className="flex items-center gap-2 mb-2">
-                      <select 
+                      <select
                         value={selectedTheaterTeam || ''}
-                        onChange={(e) => setSelectedTheaterTeam(e.target.value ? parseInt(e.target.value) : null)}
+                        onChange={(e: ChangeEvent<HTMLSelectElement>) => setSelectedTheaterTeam(e.target.value ? parseInt(e.target.value, 10) : null)}
                         className="flex-1 p-2 border rounded"
                         disabled={!buildings.theater}
                       >
@@ -3369,7 +3670,7 @@ const App = () => {
                 <StatBar label="Singing" value={selectedMember.singing} color="bg-blue-500" />
                 <StatBar label="Dancing" value={selectedMember.dancing} color="bg-green-500" />
                 <StatBar label="Variety" value={selectedMember.variety} color="bg-pink-500" />
-                <StatBar label="Stamina" value={selectedMember.stamina} color={selectedMember.stamina < 30 ? "bg-red-500" : "bg-gray-400"} />
+                <StatBar label="Stamina" value={selectedMember.stamina} color={(selectedMember.stamina ?? 0) < 30 ? "bg-red-500" : "bg-gray-400"} />
                 <StatBar label="Morale" value={selectedMember.morale} color="bg-purple-500" />
                 <p className="text-xs text-gray-500 mt-2">Social Followers: {(selectedMember.socialFollowers || 0).toLocaleString()}</p>
               </div>
