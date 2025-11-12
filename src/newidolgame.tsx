@@ -1,4 +1,3 @@
-// @ts-nocheck
 import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Star, Music, Heart, TrendingUp, Users, Award, Calendar, DollarSign, Save, 
@@ -6,28 +5,19 @@ import {
   Film, Plane, GraduationCap, Shirt, BarChart3, Bell, X, Edit, Plus, Shuffle, 
   User, Check, ChevronDown, ChevronUp, ShoppingBag, Mic, Hand, Brain, Package,
   Minimize2, Maximize2, Trash2, MapPin, Smile, LogIn, CalendarCheck, Home, 
-  ClipboardCheck, Clock, Layers, Clipboard, List, Landmark
-} from './lucide-react';
-import {
-  initializeApp,
-  getAuth,
-  signInAnonymously,
-  signInWithCustomToken,
-  onAuthStateChanged,
-  getFirestore,
-  doc,
-  setDoc,
-  getDoc,
-  setLogLevel,
-} from './firebaseClient';
+  ClipboardCheck, Clock, Layers, Clipboard
+} from 'lucide-react';
+import { initializeApp } from 'firebase/app';
+import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from 'firebase/auth';
+import { getFirestore, doc, setDoc, getDoc, setLogLevel } from 'firebase/firestore';
+
 
 // --- Custom Hook for Game Logic and State Management ---
 const useIdolManager = () => {
     // --- FIREBASE/STATE PERSISTENCE ---
-    const [db, setDb] = useState<any | null>(null);
-
-    const [auth, setAuth] = useState<any | null>(null);
-    const [userId, setUserId] = useState<string | null>(null);
+    const [db, setDb] = useState(null);
+    const [auth, setAuth] = useState(null);
+    const [userId, setUserId] = useState(null);
     const [isAuthReady, setIsAuthReady] = useState(false);
     
     const SAVE_COLLECTION = "game_data";
@@ -36,8 +26,8 @@ const useIdolManager = () => {
     useEffect(() => {
       // Set log level to debug for Firestore/Auth to help with debugging in the environment
       setLogLevel('debug'); 
-      const appId = typeof (globalThis as any).__app_id !== 'undefined' ? (globalThis as any).__app_id : 'default-app-id';
-      const firebaseConfig = typeof (globalThis as any).__firebase_config !== 'undefined' ? JSON.parse((globalThis as any).__firebase_config) : {};
+      const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+      const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
 
       if (Object.keys(firebaseConfig).length > 0) {
         const app = initializeApp(firebaseConfig);
@@ -50,7 +40,7 @@ const useIdolManager = () => {
           if (user) {
             setUserId(user.uid);
           } else {
-            const token = typeof (globalThis as any).__initial_auth_token !== 'undefined' ? (globalThis as any).__initial_auth_token : null;
+            const token = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
             try {
               if (token) {
                 const userCredential = await signInWithCustomToken(firebaseAuth, token);
@@ -77,7 +67,7 @@ const useIdolManager = () => {
     
     const getSavePath = useCallback((uid) => {
         if (!uid || !db) return null;
-        const appId = typeof (globalThis as any).__app_id !== 'undefined' ? (globalThis as any).__app_id : 'default-app-id';
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
         return doc(db, `artifacts/${appId}/users/${uid}/${SAVE_COLLECTION}/${SAVE_DOC_ID}`);
     }, [db]);
 
@@ -96,20 +86,14 @@ const useIdolManager = () => {
     const [notifications, setNotifications] = useState([]);
     const [songs, setSongs] = useState([]);
     const [teams, setTeams] = useState([]);
-    const [allSetlists, setAllSetlists] = useState(() => ([
+    const [allSetlists, setAllSetlists] = useState([
         { id: 1, name: "A1 'Party ga Hajimaru yo'", theme: 'classic', difficulty: 100 },
         { id: 2, name: "K2 'Aitakatta'", theme: 'classic', difficulty: 120 },
         { id: 3, name: "H3 'Mokugekisha'", theme: 'dance', difficulty: 150 },
         { id: 4, name: "B4 'Idol no Yoake'", theme: 'vocal', difficulty: 140 },
-    ]));
-    const [buildings, setBuildings] = useState(() => ({
-        theater: false,
-        practiceRooms: { vocal: 0, dance: 0, variety: 0 },
-    }));
-    /* Sister group state uses runtime any[] to avoid local TS interface issues.
-       Expected shape reference: name, optional location, fans total, power rating, member list,
-       optional songs array, and optional income value. */
-    const [sisterGroups, setSisterGroups] = useState<any[]>([]);
+    ]);
+    const [buildings, setBuildings] = useState({ theater: false, practiceRooms: { vocal: 0, dance: 0, variety: 0 } });
+    const [sisterGroups, setSisterGroups] = useState([]); 
     const [rivalGroups, setRivalGroups] = useState([]);
     const [achievements, setAchievements] = useState([]);
     const [hallOfFame, setHallOfFame] = useState([]);
@@ -132,11 +116,11 @@ const useIdolManager = () => {
     const [selectedSisterGroup, setSelectedSisterGroup] = useState(null);
     const [selectedTheaterTeam, setSelectedTheaterTeam] = useState(null);
     const [username, setUsername] = useState('Guest');
-    const [memberView, setMemberView] = useState('list');
+    const [memberView, setMemberView] = useState('list'); 
     const [merchInventory, setMerchInventory] = useState({ photos: 0, towels: 0, lightsticks: 0 });
     const [merchPrices] = useState({ photos: 1500, towels: 2500, lightsticks: 3500 });
     const [merchProdCost] = useState({ photos: 500, towels: 1000, lightsticks: 1500 });
-    const [activeTrainingCamp, setActiveTrainingCamp] = useState(null);
+    const [activeTrainingCamp, setActiveTrainingCamp] = useState(null); 
     const [venues, setVenues] = useState([
         { id: 1, name: 'Local Theater (Own)', capacity: 250, cost: 0, maintenance: 5000 },
         { id: 2, name: 'Small Hall (1K)', capacity: 1000, cost: 50000, maintenance: 10000 },
@@ -144,6 +128,7 @@ const useIdolManager = () => {
         { id: 4, name: 'Dome (50K)', capacity: 50000, cost: 5000000, maintenance: 100000 },
     ]);
     const [performanceHistory, setPerformanceHistory] = useState([]);
+
     // Performance Types Data
     const performanceTypes = [
         { label: "Debut Stage", category: "Official", cost: 10000, fanImpact: 0.1, skillImpact: 0.1, staminaDrain: 20, desc: "The official first performance to introduce the group." },
@@ -174,58 +159,84 @@ const useIdolManager = () => {
 
 
     // START/LOAD/SAVE FUNCTIONS
-const loadGame = async (gameUsername, uid, setStartUsername, setStartGroupName) => {
-    if (!db || !uid) return setMessage("System not ready. Try again in a moment.");
-    
-    const currentUserId = uid || userId; 
-    
-    try {
-        const path = getSavePath(currentUserId);
-        if (!path) throw new Error("Could not determine load path.");
+    const saveGame = async (gameUsername, uid) => {
+        if (!db || !uid) return setMessage("System not ready. Try again in a moment.");
         
-        const docSnap = await getDoc(path);
+        const currentUserId = uid || userId; 
 
-        if (docSnap.exists()) {
-            const data = docSnap.data();
+        // Package all essential game states
+        const gameState = {
+            groupName, money, week, members: JSON.stringify(members), totalFans, songs: JSON.stringify(songs), teams: JSON.stringify(teams), allSetlists: JSON.stringify(allSetlists), buildings: JSON.stringify(buildings), sisterGroups: JSON.stringify(sisterGroups), rivalGroups: JSON.stringify(rivalGroups), 
+            achievements: JSON.stringify(achievements), hallOfFame: JSON.stringify(hallOfFame), events: JSON.stringify(events), sponsorships: JSON.stringify(sponsorships), difficulty, internationalMarkets: JSON.stringify(internationalMarkets), outfits: JSON.stringify(outfits), tours: JSON.stringify(tours), activeTour: JSON.stringify(activeTour), 
+            musicVideos: JSON.stringify(musicVideos), varietyShows: JSON.stringify(varietyShows), photoBooks: JSON.stringify(photoBooks), documentaries: JSON.stringify(documentaries), collaborations: JSON.stringify(collaborations), scandals: JSON.stringify(scandals), statistics: JSON.stringify(statistics), merchInventory: JSON.stringify(merchInventory), 
+            activeTrainingCamp: JSON.stringify(activeTrainingCamp), username: gameUsername, venues: JSON.stringify(venues), performanceHistory: JSON.stringify(performanceHistory)
+        };
+
+        try {
+            const path = getSavePath(currentUserId);
+            if (!path) throw new Error("Could not determine save path.");
             
-            // Restore state (parse JSON strings for complex objects)
-            setGroupName(data.groupName || '');
-            setMoney(data.money || 0);
-            setWeek(data.week || 1);
-            setMembers(data.members ? JSON.parse(data.members) : []);
-            setTotalFans(data.totalFans || 0);
-            setSongs(data.songs ? JSON.parse(data.songs) : []);
-            setTeams(data.teams ? JSON.parse(data.teams) : []);
-            setAllSetlists(data.allSetlists ? JSON.parse(data.allSetlists) : []);
-            setBuildings(data.buildings ? JSON.parse(data.buildings) : { theater: false, practiceRooms: { vocal: 0, dance: 0, variety: 0 } });
-            setSisterGroups(data.sisterGroups ? JSON.parse(data.sisterGroups) : []);
-            setRivalGroups(data.rivalGroups ? JSON.parse(data.rivalGroups) : []);
-            setStatistics(data.statistics ? JSON.parse(data.statistics) : { totalRevenue: 0, totalConcerts: 0, totalSongs: 0, revenueHistory: [] });
-            setMerchInventory(data.merchInventory ? JSON.parse(data.merchInventory) : { photos: 0, towels: 0, lightsticks: 0 });
-            setActiveTour(data.activeTour ? JSON.parse(data.activeTour) : null);
-            setActiveTrainingCamp(data.activeTrainingCamp ? JSON.parse(data.activeTrainingCamp) : null);
-            setUsername(data.username || gameUsername);
-            setVenues(data.venues ? JSON.parse(data.venues) : [
-                { id: 1, name: 'Local Theater (Own)', capacity: 250, cost: 0, maintenance: 5000 },
-                { id: 2, name: 'Small Hall (1K)', capacity: 1000, cost: 50000, maintenance: 10000 },
-                { id: 3, name: 'City Arena (5K)', capacity: 5000, cost: 250000, maintenance: 30000 },
-                { id: 4, name: 'Dome (50K)', capacity: 50000, cost: 5000000, maintenance: 100000 },
-            ]); 
-            setPerformanceHistory(data.performanceHistory ? JSON.parse(data.performanceHistory) : []);
-            
-            setGameStarted(true);
-            setMessage(`Game loaded successfully for user: ${data.username || gameUsername}!`);
+            await setDoc(path, gameState);
+            setMessage(`Game saved successfully for user: ${gameUsername}!`);
             setShowModal(null);
-        } else {
-            setMessage(`No save file found for user: ${gameUsername}.`);
+            setUsername(gameUsername); 
+        } catch (e) {
+            console.error("Error saving game:", e);
+            setMessage(`Error saving game: ${e.message}.`);
         }
-    } catch (e) {
-        console.error("Error loading game:", e);
-        const errMsg = (e instanceof Error) ? e.message : String(e);
-        setMessage(`Error loading game: ${errMsg}.`);
-    }
-};
+    };
 
+    const loadGame = async (gameUsername, uid, setStartUsername, setStartGroupName) => {
+        if (!db || !uid) return setMessage("System not ready. Try again in a moment.");
+        
+        const currentUserId = uid || userId; 
+        
+        try {
+            const path = getSavePath(currentUserId);
+            if (!path) throw new Error("Could not determine load path.");
+            
+            const docSnap = await getDoc(path);
+
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                
+                // Restore state (parse JSON strings for complex objects)
+                setGroupName(data.groupName || '');
+                setMoney(data.money || 0);
+                setWeek(data.week || 1);
+                setMembers(data.members ? JSON.parse(data.members) : []);
+                setTotalFans(data.totalFans || 0);
+                setSongs(data.songs ? JSON.parse(data.songs) : []);
+                setTeams(data.teams ? JSON.parse(data.teams) : []);
+                setAllSetlists(data.allSetlists ? JSON.parse(data.allSetlists) : []);
+                setBuildings(data.buildings ? JSON.parse(data.buildings) : { theater: false, practiceRooms: { vocal: 0, dance: 0, variety: 0 } });
+                setSisterGroups(data.sisterGroups ? JSON.parse(data.sisterGroups) : []);
+                setRivalGroups(data.rivalGroups ? JSON.parse(data.rivalGroups) : []);
+                setStatistics(data.statistics ? JSON.parse(data.statistics) : { totalRevenue: 0, totalConcerts: 0, totalSongs: 0, revenueHistory: [] });
+                setMerchInventory(data.merchInventory ? JSON.parse(data.merchInventory) : { photos: 0, towels: 0, lightsticks: 0 });
+                setActiveTour(data.activeTour ? JSON.parse(data.activeTour) : null);
+                setActiveTrainingCamp(data.activeTrainingCamp ? JSON.parse(data.activeTrainingCamp) : null);
+                setUsername(data.username || gameUsername);
+                setVenues(data.venues ? JSON.parse(data.venues) : [
+                    { id: 1, name: 'Local Theater (Own)', capacity: 250, cost: 0, maintenance: 5000 },
+                    { id: 2, name: 'Small Hall (1K)', capacity: 1000, cost: 50000, maintenance: 10000 },
+                    { id: 3, name: 'City Arena (5K)', capacity: 5000, cost: 250000, maintenance: 30000 },
+                    { id: 4, name: 'Dome (50K)', capacity: 50000, cost: 5000000, maintenance: 100000 },
+                ]); 
+                setPerformanceHistory(data.performanceHistory ? JSON.parse(data.performanceHistory) : []);
+                
+                setGameStarted(true);
+                setMessage(`Game loaded successfully for user: ${data.username || gameUsername}!`);
+                setShowModal(null);
+            } else {
+                setMessage(`No save file found for user: ${gameUsername}.`);
+            }
+        } catch (e) {
+            console.error("Error loading game:", e);
+            setMessage(`Error loading game: ${e.message}.`);
+        }
+    };
+    
     // --- MEMBER/GROUP UTILITIES ---
 
     const generateRandomName = () => {
@@ -338,7 +349,6 @@ const loadGame = async (gameUsername, uid, setStartUsername, setStartGroupName) 
               }
           });
       }
-      // Filter out members who are explicitly unavailable (e.g., training camp)
       return all.filter(m => m.isAvailable);
     };
     
@@ -355,9 +365,7 @@ const loadGame = async (gameUsername, uid, setStartUsername, setStartGroupName) 
                   id: memberId, 
                   name: `${member.name} (${sg.name})`,
                   isSister: true,
-                  groupId: sgId,
-                  // Check if this SG member is also Kennin to the main group
-                  isKennin: (member.kenninGroups || []).includes('main')
+                  groupId: sgId
               };
           }
       }
@@ -665,22 +673,6 @@ const loadGame = async (gameUsername, uid, setStartUsername, setStartGroupName) 
       setMoney(prev => (prev || 0) + totalRevenue);
       setStatistics(prev => ({ ...prev, totalRevenue: (prev.totalRevenue || 0) + totalRevenue, totalConcerts: (prev.totalConcerts || 0) + 1 }));
       
-      // Record Theater Show
-      const performanceType = { label: "Theater Show", category: "Internal", cost: buildings.theater ? 5000 : 10000, staminaDrain: 20 };
-      const newEntry = {
-          id: Date.now(),
-          name: `${performanceType.label} - ${team ? team.name : 'All Members'}`,
-          category: "Theater",
-          week,
-          cost: performanceType.cost,
-          revenue: totalRevenue,
-          members: performingMembers.map(m => m.name),
-          tracks: setlist ? [setlist.name] : ['Mixed Stage'],
-          merchRevenue,
-          ticketRevenue
-      };
-      setPerformanceHistory(prev => [newEntry, ...prev]);
-
       let concertMessage = `Theater Show success! ${team ? team.name : 'All members'} performed!`;
       if (themeBonus > 1) concertMessage += " (Theme Bonus!)";
       if (themeBonus < 1) concertMessage += " (Theme Mismatch!)";
@@ -710,100 +702,11 @@ const loadGame = async (gameUsername, uid, setStartUsername, setStartGroupName) 
           members: g.members.map(m => m.isAvailable ? { ...m, stamina: Math.max(0, m.stamina - 20) } : m) 
       } : g));
       
-      const newEntry = {
-          id: Date.now(),
-          name: `${sg.name} Sister Group Show`,
-          category: "Sister Group",
-          week,
-          cost: cost,
-          revenue: ticketRevenue,
-          members: performingMembers.map(m => m.name),
-          tracks: ['Sister Group Repertoire']
-      };
-      setPerformanceHistory(prev => [newEntry, ...prev]);
-
       setMessage(`${sg.name} held a show. Profit: ¥${profit.toLocaleString()}. +${fanGain} fans to ${sg.name}.`);
     }
     
-    // UPDATED: Major Concert now uses selectedTracks instead of a Setlist object
-    const holdMajorConcert = (venue, selectedTracks, selectedMemberIds) => {
-        if (selectedTracks.length === 0) return setMessage("Must select at least one track for the concert.");
-        
-        const performingMembers = selectedMemberIds.map(getMemberById).filter(m => m && m.isAvailable);
-
-        const baseCost = venue.cost + venue.maintenance;
-        if (money < baseCost) return setMessage(`Insufficient funds! Concert costs ¥${baseCost.toLocaleString()}.`);
-
-        // Calculate average skill based on performing members
-        const avgSkill = performingMembers.reduce((sum, m) => m.singing + m.dancing, 0) / (performingMembers.length * 200);
-        
-        // Calculate Ticket Sales (Capped by Capacity and influenced by skill/fan base)
-        const ticketPrice = 5000 + (venue.capacity / 1000); 
-        const demandRatio = Math.min(1.0, (totalFans / 10) / venue.capacity); 
-        // Performance factor: Avg Skill (0-1) + Number of songs (max 10)
-        const performanceFactor = 1 + avgSkill * 0.5 + Math.min(10, selectedTracks.length) * 0.05; 
-        
-        const ticketsSold = Math.floor(venue.capacity * demandRatio * performanceFactor);
-        const ticketRevenue = ticketsSold * ticketPrice;
-        
-        // Calculate Fan & Skill Impact
-        const fanGain = Math.floor(ticketsSold * (0.01 + avgSkill * 0.05));
-        const skillImprovement = 10 + Math.floor(avgSkill * 10);
-        const staminaDrain = 60;
-        
-        // Final Revenue
-        const profit = ticketRevenue - baseCost;
-
-        // 1. Update State
-        setMoney(prev => prev + profit);
-        setTotalFans(prev => (prev || 0) + fanGain);
-        setStatistics(prev => ({ ...prev, totalRevenue: (prev.totalRevenue || 0) + ticketRevenue, totalConcerts: (prev.totalConcerts || 0) + 1 }));
-
-        // 2. Update Members
-        const performingMemberIds = performingMembers.map(m => m.id);
-        
-        const applyMemberUpdate = (m) => {
-            if (performingMemberIds.some(id => String(id) === String(m.id))) {
-                return {
-                    ...m,
-                    stamina: Math.max(0, m.stamina - staminaDrain),
-                    morale: Math.min(100, m.morale + 10), 
-                    singing: Math.min(100, m.singing + Math.floor(skillImprovement * 0.5)),
-                    dancing: Math.min(100, m.dancing + Math.floor(skillImprovement * 0.5)),
-                    fans: m.fans + Math.floor(fanGain / performingMembers.length)
-                };
-            }
-            return m;
-        };
-        
-        setMembers(prev => prev.map(applyMemberUpdate));
-        setSisterGroups(prev => prev.map(sg => ({
-            ...sg,
-            members: sg.members.map(m => applyMemberUpdate(m))
-        })));
-
-
-        // 3. Record History
-        const newEntry = {
-            id: Date.now(),
-            name: `${venue.name} Concert`,
-            category: "Major Concert",
-            week,
-            cost: baseCost,
-            revenue: ticketRevenue,
-            members: performingMembers.map(m => m.name),
-            tracks: selectedTracks.map(t => t.name), // Tracks are now an array of track names
-            venue: venue.name,
-            ticketsSold,
-            ticketPrice,
-            fanGain
-        };
-        setPerformanceHistory(prev => [newEntry, ...prev]);
-
-        // 4. Message
-        setMessage(`Major Concert at ${venue.name} successful! Sold ${ticketsSold.toLocaleString()} tickets. Profit: ¥${profit.toLocaleString()}. +${fanGain.toLocaleString()} fans!`);
-        setShowModal(null);
-    };
+    // DEPRECATED: holdLargeConcert logic removed, now part of recordPerformance
+    const holdLargeConcert = () => { /* No Op */ };
 
 
     const holdElection = () => {
@@ -982,6 +885,81 @@ const loadGame = async (gameUsername, uid, setStartUsername, setStartGroupName) 
     };
     
     // --- Performance Management Logic ---
+
+    const holdMajorConcert = (venue, setlist, selectedMemberIds) => {
+        if (!setlist) return setMessage("Must select a setlist.");
+        if (selectedMemberIds.length === 0) return setMessage("Must select at least one member to perform.");
+        
+        const performingMembers = selectedMemberIds.map(getMemberById).filter(m => m && m.isAvailable);
+        if (performingMembers.length === 0) return setMessage("No selected members are available to perform.");
+
+        const baseCost = venue.cost + venue.maintenance;
+        if (money < baseCost) return setMessage(`Insufficient funds! Concert costs ¥${baseCost.toLocaleString()}.`);
+
+        const avgSkill = performingMembers.reduce((sum, m) => m.singing + m.dancing, 0) / (performingMembers.length * 200);
+        
+        // Calculate Ticket Sales (Capped by Capacity)
+        const ticketPrice = 5000 + (venue.capacity / 100); 
+        const demandRatio = Math.min(1.0, (totalFans / 5) / venue.capacity); 
+        const ticketsSold = Math.floor(venue.capacity * demandRatio * (1 + avgSkill * 0.5));
+        const ticketRevenue = ticketsSold * ticketPrice;
+        
+        // Calculate Fan & Skill Impact
+        const fanGain = Math.floor(ticketsSold * (0.01 + avgSkill * 0.05));
+        const skillImprovement = 10 + Math.floor(avgSkill * 10);
+        const staminaDrain = 60;
+        
+        // Final Revenue
+        const profit = ticketRevenue - baseCost;
+
+        // 1. Update State
+        setMoney(prev => prev + profit);
+        setTotalFans(prev => (prev || 0) + fanGain);
+        setStatistics(prev => ({ ...prev, totalRevenue: (prev.totalRevenue || 0) + ticketRevenue, totalConcerts: (prev.totalConcerts || 0) + 1 }));
+
+        // 2. Update Members
+        const performingMemberIds = performingMembers.map(m => m.id);
+        
+        const applyMemberUpdate = (m) => {
+            if (performingMemberIds.some(id => String(id) === String(m.id))) {
+                return {
+                    ...m,
+                    stamina: Math.max(0, m.stamina - staminaDrain),
+                    morale: Math.min(100, m.morale + 10), 
+                    singing: Math.min(100, m.singing + Math.floor(skillImprovement * 0.5)),
+                    dancing: Math.min(100, m.dancing + Math.floor(skillImprovement * 0.5)),
+                    fans: m.fans + Math.floor(fanGain / performingMembers.length)
+                };
+            }
+            return m;
+        };
+        
+        setMembers(prev => prev.map(applyMemberUpdate));
+        setSisterGroups(prev => prev.map(sg => ({
+            ...sg,
+            members: sg.members.map(m => applyMemberUpdate(m))
+        })));
+
+
+        // 3. Record History
+        const newEntry = {
+            id: Date.now(),
+            name: `${venue.name} Concert`,
+            category: "Major Concert",
+            week,
+            cost: baseCost,
+            revenue: ticketRevenue,
+            members: performingMembers.map(m => m.name),
+            tracks: [setlist.name]
+        };
+        setPerformanceHistory(prev => [newEntry, ...prev]);
+
+        // 4. Message
+        setMessage(`Major Concert at ${venue.name} successful! Sold ${ticketsSold.toLocaleString()} tickets. Profit: ¥${profit.toLocaleString()}. +${fanGain.toLocaleString()} fans!`);
+        setShowModal(null);
+    };
+
+
     const recordPerformance = (typeData, selectedTracks, selectedMemberIds) => {
         if (selectedTracks.length === 0) return setMessage("Must select at least one song to perform.");
         if (selectedMemberIds.length === 0) return setMessage("Must select at least one member to perform.");
@@ -1046,10 +1024,7 @@ const loadGame = async (gameUsername, uid, setStartUsername, setStartGroupName) 
             cost: typeData.cost,
             revenue: totalRevenue,
             members: performingMembers.map(m => m.name),
-            tracks: selectedTracks.map(t => t.name),
-            fanGain,
-            profit,
-            desc: typeData.desc
+            tracks: selectedTracks.map(t => t.name)
         };
         setPerformanceHistory(prev => [newEntry, ...prev]);
 
@@ -1098,7 +1073,6 @@ const loadGame = async (gameUsername, uid, setStartUsername, setStartGroupName) 
                 isSister: false,
                 groupId: undefined,
                 kenninGroups: [], 
-                isKennin: false
             };
             setMembers(prev => [...prev, newMainMember]);
             setMessage(`${member.name} successfully transferred to ${groupName}! (¥${cost.toLocaleString()})`);
@@ -1121,8 +1095,7 @@ const loadGame = async (gameUsername, uid, setStartUsername, setStartGroupName) 
             // Update the selected member object in the sidebar immediately
             setSelectedMember(prev => prev ? { 
                 ...prev, 
-                kenninGroups: [...(prev.kenninGroups || []).filter(gName => gName !== 'main'), 'main'],
-                isKennin: true 
+                kenninGroups: [...(prev.kenninGroups || []).filter(gName => gName !== 'main'), 'main'] 
             } : null);
 
             setMessage(`${member.name} is now a Kennin member of ${groupName} (¥${cost.toLocaleString()}).`);
@@ -1410,39 +1383,41 @@ const loadGame = async (gameUsername, uid, setStartUsername, setStartGroupName) 
       const cost = 250000;
       if (money < cost) return setMessage(`Need ¥${cost.toLocaleString()} to establish a new sister group.`);
 
+      // FIX: Use a safe calculation for new SG ID
       const newId = Math.max(0, ...(sisterGroups || []).map(sg => sg.id || 0)) + 1;
-
+      
       const initialMembers = Array.from({ length: 5 }, (_, i) => {
-        const name = generateRandomName();
-        return {
-          id: i + 1,
-          name: name,
-          nickname: name.split(' ')[0],
-          singing: 15, dancing: 15, variety: 10, stamina: 100, morale: 80,
-          fans: 50, position: i === 0 ? 'center' : 'back',
-          homeGroup: groupData.groupName,
-          isAvailable: true,
-          songsParticipation: [],
-          singlesParticipation: [],
-          centerHistory: [],
-          kenninGroups: [],
-          age: 15 + i,
-          yearsActive: 0,
-          socialFollowers: 300
-        };
+          const name = generateRandomName();
+          return {
+              // FIX: Ensure m.id is calculated safely starting from 1
+              id: i + 1,
+              name: name,
+              nickname: name.split(' ')[0],
+              singing: 15, dancing: 15, variety: 10, stamina: 100, morale: 80,
+              fans: 50, position: i === 0 ? 'center' : 'back',
+              homeGroup: groupData.groupName,
+              isAvailable: true,
+              songsParticipation: [], 
+              singlesParticipation: [],
+              centerHistory: [],
+              kenninGroups: [],
+              age: 15 + i,
+              yearsActive: 0,
+              socialFollowers: 300
+          };
       });
 
       const newSisterGroup = {
-        id: newId,
-        name: groupData.groupName,
-        location: groupData.location,
-        fans: 500,
-        power: 50,
-        members: initialMembers,
-        songs: [],
-        income: 1000,
+          id: newId,
+          name: groupData.groupName,
+          location: groupData.location,
+          fans: 500, 
+          power: 50, 
+          members: initialMembers,
+          songs: [],
+          income: 1000, 
       };
-
+      
       setSisterGroups(prev => [...(prev || []), newSisterGroup]);
       setMoney(prev => prev - cost);
       setMessage(`Successfully established ${groupData.groupName} in ${groupData.location}!`);
@@ -1451,18 +1426,16 @@ const loadGame = async (gameUsername, uid, setStartUsername, setStartGroupName) 
     };
 
     return {
-      // State
-      gameStarted, setGameStarted, groupName, money, week, members, setMembers, selectedMember, setSelectedMember, message, setMessage, totalFans, setTotalFans, currentTab, setCurrentTab, showNotifications, setShowNotifications, notifications, setNotifications, songs, setSongs, teams, setTeams, allSetlists, setAllSetlists, buildings, setBuildings, sisterGroups, setSisterGroups, rivalGroups, setRivalGroups, achievements, hallOfFame, events, sponsorships, showModal, setShowModal, modalData, setModalData, selectedSisterGroup, setSelectedSisterGroup, selectedTheaterTeam, setSelectedTheaterTeam, username, setUsername, memberView, setMemberView, merchInventory, setMerchInventory, merchPrices, merchProdCost, activeTour, setActiveTour, venues, setVenues, performanceHistory, setPerformanceHistory, performanceTypes,
-      // Firebase/Persistence
-      db, auth, userId, isAuthReady, saveGame, loadGame,
-      // Utilities
-      startGame, getAllAvailableMembers, getMemberById, updateMemberState, generateRandomName, getMemberGroupStatus, getMemberRank, addNotification, getMainGroupRoster,
-      // Logic
-      trainMember, restMember, restAllTired, buildTheater, upgradePracticeRoom, startTour, progressTour, createTeam, editTeam, deleteTeam, startTheaterShowPrep, startLargeConcertPrep, graduateMember, holdTheaterShow, holdSisterGroupShow, holdLargeConcert, holdElection, createSong, createCustomSetlist, confirmCreateSetlist, confirmCreateSong, recruitMember, recruitSisterGroupMember, handleDisbandSisterGroup, produceMerch, startHandshakeEvent, startTrainingCamp, startMediaJob, startGroupMediaJob, nextWeek, confirmCreateSisterGroup, handleSisterMemberTransfer, recordPerformance, startPerformancePrep, confirmCreateTeam, confirmEditTeam, holdMajorConcert
+        // State
+        gameStarted, setGameStarted, groupName, money, week, members, setMembers, selectedMember, setSelectedMember, message, setMessage, totalFans, setTotalFans, currentTab, setCurrentTab, showNotifications, setShowNotifications, notifications, setNotifications, songs, setSongs, teams, setTeams, allSetlists, setAllSetlists, buildings, setBuildings, sisterGroups, setSisterGroups, rivalGroups, setRivalGroups, achievements, hallOfFame, events, sponsorships, showModal, setShowModal, modalData, setModalData, selectedSisterGroup, setSelectedSisterGroup, selectedTheaterTeam, setSelectedTheaterTeam, username, setUsername, memberView, setMemberView, merchInventory, setMerchInventory, merchPrices, merchProdCost, activeTour, setActiveTour, venues, setVenues, performanceHistory, setPerformanceHistory, performanceTypes,
+        // Firebase/Persistence
+        db, auth, userId, isAuthReady, saveGame, loadGame,
+        // Utilities
+        startGame, getAllAvailableMembers, getMemberById, updateMemberState, generateRandomName, getMemberGroupStatus, getMemberRank, addNotification, getMainGroupRoster,
+        // Logic
+        trainMember, restMember, restAllTired, buildTheater, upgradePracticeRoom, startTour, progressTour, createTeam, editTeam, deleteTeam, startTheaterShowPrep, startLargeConcertPrep, graduateMember, holdTheaterShow, holdSisterGroupShow, holdLargeConcert, holdElection, createSong, createCustomSetlist, confirmCreateSetlist, confirmCreateSong, recruitMember, recruitSisterGroupMember, handleDisbandSisterGroup, produceMerch, startHandshakeEvent, startTrainingCamp, startMediaJob, startGroupMediaJob, nextWeek, confirmCreateSisterGroup, handleSisterMemberTransfer, recordPerformance, startPerformancePrep, confirmCreateTeam, confirmEditTeam, holdMajorConcert
     };
-
 };
-
 
 
 const App = () => {
@@ -1476,7 +1449,7 @@ const App = () => {
         // Logic
         trainMember, restMember, restAllTired, buildTheater, upgradePracticeRoom, startTour, progressTour, createTeam, editTeam, deleteTeam, startTheaterShowPrep, startLargeConcertPrep, graduateMember, holdTheaterShow, holdSisterGroupShow, holdLargeConcert, holdElection, createSong, createCustomSetlist, confirmCreateSetlist, confirmCreateSong, recruitMember, recruitSisterGroupMember, handleDisbandSisterGroup, produceMerch, startHandshakeEvent, startTrainingCamp, startMediaJob, startGroupMediaJob, nextWeek, confirmCreateSisterGroup, handleSisterMemberTransfer, recordPerformance, startPerformancePrep, confirmCreateTeam, confirmEditTeam, holdMajorConcert
     } = useIdolManager();
-    
+
     // Local state for start screen inputs (not part of the main game state in the hook)
     const [startUsername, setStartUsername] = useState('');
     const [startGroupName, setStartGroupName] = useState('');
@@ -1670,9 +1643,8 @@ const App = () => {
       let selectableMembers = [];
       if (targetGroup === 'main') {
           const mainMembers = members.filter(m => m.homeGroup === 'main' && m.isAvailable);
-          // Include available sister members who are kennin in the main group
-          const sgKenninMembers = getAllAvailableMembers(true).filter(m => m.isSister && (m.kenninGroups || []).includes('main'));
-          selectableMembers = [...mainMembers, ...sgKenninMembers];
+          const sgMembers = getAllAvailableMembers(true).filter(m => m.isSister && (m.kenninGroups || []).includes('main'));
+          selectableMembers = [...mainMembers, ...sgMembers];
       } else {
           const sg = sisterGroups.find(s => s.name === targetGroup);
           if (sg) {
@@ -1862,54 +1834,6 @@ const App = () => {
       );
     };
     
-    const LivePerformanceDetailsModal = () => {
-        const performance = modalData;
-        if (!performance) return null;
-
-        return (
-            <ModalWrapper title={<span className="flex items-center"><Clipboard size={24} className="mr-2"/> Performance Details</span>} maxWidth="max-w-xl">
-                <div className="space-y-4">
-                    <div className='p-3 bg-indigo-50 rounded-lg'>
-                        <h4 className="font-bold text-xl mb-1 text-indigo-800">{performance.name}</h4>
-                        <p className="text-sm text-gray-600">Category: <span className='font-semibold'>{performance.category}</span> | Week: <span className='font-semibold'>{performance.week}</span></p>
-                        {performance.venue && <p className="text-sm text-gray-600 flex items-center"><Landmark size={14} className='mr-1'/>Venue: <span className='font-semibold ml-1'>{performance.venue}</span></p>}
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className='p-3 border rounded'>
-                            <h5 className="font-semibold text-lg text-green-700 flex items-center"><DollarSign size={16} className='mr-1'/> Financials</h5>
-                            <p className="text-sm">Revenue: <span className='font-bold'>¥{performance.revenue.toLocaleString()}</span></p>
-                            <p className="text-sm text-red-500">Cost: <span className='font-bold'>¥{performance.cost.toLocaleString()}</span></p>
-                            <p className="text-sm pt-1 border-t mt-1">Profit: <span className='font-bold'>¥{(performance.revenue - performance.cost).toLocaleString()}</span></p>
-                        </div>
-                        <div className='p-3 border rounded bg-red-50'>
-                            <h5 className="font-semibold text-lg text-red-700 flex items-center"><Heart size={16} className='mr-1'/> Impact</h5>
-                            <p className="text-sm">Fans Gained: <span className='font-bold'>+{performance.fanGain ? performance.fanGain.toLocaleString() : 'N/A'}</span></p>
-                            {performance.ticketsSold && <p className="text-sm">Tickets Sold: <span className='font-bold'>{performance.ticketsSold.toLocaleString()}</span></p>}
-                        </div>
-                    </div>
-
-                    <div className='border-t pt-3'>
-                        <h5 className="font-semibold mb-2 flex items-center"><Users size={16} className='mr-1'/> Performing Members ({performance.members.length})</h5>
-                        <p className="text-sm text-gray-700 break-words">{performance.members.join(', ')}</p>
-                    </div>
-
-                    <div className='border-t pt-3'>
-                        <h5 className="font-semibold mb-2 flex items-center"><Music size={16} className='mr-1'/> Setlist Tracks ({performance.tracks.length})</h5>
-                        <ul className="list-disc list-inside text-sm text-gray-700 max-h-24 overflow-y-auto p-2 bg-gray-50 rounded">
-                            {performance.tracks.map((track, i) => <li key={i}>{track}</li>)}
-                        </ul>
-                    </div>
-
-                </div>
-                <div className="flex justify-end gap-2 mt-4">
-                    <button onClick={() => setShowModal(null)} className="p-2 bg-gray-300 rounded">Close</button>
-                </div>
-            </ModalWrapper>
-        );
-    };
-
-
     const SingleDetailsModal = () => { 
       const single = modalData;
       if (!single) return null;
@@ -2106,22 +2030,15 @@ const App = () => {
         );
     };
     
-    // UPDATED: Major Concert Modal to use multi-track selection
+    // NEW: Major Concert Modal
     const MajorConcertModal = () => {
         const [selectedVenueId, setSelectedVenueId] = useState(venues[1]?.id || '');
-        const [selectedTracks, setSelectedTracks] = useState([]);
+        const [selectedSetlistId, setSelectedSetlistId] = useState('');
         const [selectedMembers, setSelectedMembers] = useState([]);
         
         const selectedVenue = venues.find(v => v.id === selectedVenueId);
+        const selectedSetlist = allSetlists.find(sl => sl.id === selectedSetlistId);
         const availableMembers = getAllAvailableMembers(true); 
-        
-        const allTracks = songs.flatMap(s => (s.tracks || []).map(t => ({
-            id: `${s.id}-${t.name}-${s.targetGroup}`,
-            name: `${t.name} (Single: ${s.name} - ${s.targetGroup === 'main' ? groupName : s.targetGroup})`,
-            singleName: s.name,
-            group: s.targetGroup,
-            isTitle: t.type === 'title',
-        })));
         
         const toggleMember = (memberId) => {
             setSelectedMembers(prev => prev.map(String).includes(String(memberId))
@@ -2130,56 +2047,59 @@ const App = () => {
             );
         };
         
-        const toggleTrack = (trackId) => {
-            setSelectedTracks(prev => {
-                const isSelected = prev.some(t => t.id === trackId);
-                const track = allTracks.find(t => t.id === trackId);
-                if (!track) return prev;
-                
-                return isSelected 
-                    ? prev.filter(t => t.id !== trackId) 
-                    : [...prev, track];
-            });
-        };
-        
         const handleConfirm = () => {
-            if (!selectedVenue) return setMessage("Must select a venue.");
-            if (selectedTracks.length === 0) return setMessage("Must select at least one song for the concert.");
+            if (!selectedVenue || !selectedSetlist) return setMessage("Must select a venue and a setlist.");
             if (selectedMembers.length < 5) return setMessage("Need at least 5 members for a major concert.");
             
-            holdMajorConcert(selectedVenue, selectedTracks, selectedMembers);
+            holdMajorConcert(selectedVenue, selectedSetlist, selectedMembers);
         };
         
         const cost = selectedVenue ? selectedVenue.cost + selectedVenue.maintenance : 0;
 
         return (
             <ModalWrapper title={<span className="flex items-center"><Trophy size={24} className="mr-2"/> Book Major Concert</span>} maxWidth="max-w-4xl">
-                <p className="text-sm text-gray-600 mb-4">Book a major venue using multiple released tracks to form the setlist. High risk, high reward.</p>
+                <p className="text-sm text-gray-600 mb-4">Book a major venue using a full setlist. This has a high cost but massive potential for fan and revenue growth.</p>
                 
-                <div className="grid grid-cols-3 gap-6">
-                    {/* Venue Selection */}
-                    <div className="col-span-1 border-r pr-4 space-y-3">
-                        <h4 className="font-semibold mb-1 flex items-center"><Landmark size={16} className='mr-1'/> 1. Select Venue</h4>
+                <div className="grid grid-cols-2 gap-4">
+                    {/* Venue & Setlist Selection */}
+                    <div className="col-span-1 space-y-3">
+                        <h4 className="font-semibold mb-1">1. Select Venue (Capacity)</h4>
                         <select 
                             value={selectedVenueId}
                             onChange={(e) => setSelectedVenueId(parseInt(e.target.value))}
                             className="w-full p-2 border rounded"
                         >
-                            <option value="">-- Select Venue (Cap) --</option>
+                            <option value="">-- Select Venue --</option>
                             {venues.filter(v => v.id > 1).map(v => ( // Exclude theater here
-                                <option key={v.id} value={v.id}>{v.name}</option>
+                                <option key={v.id} value={v.id}>{v.name} (Cap: {v.capacity.toLocaleString()})</option>
                             ))}
                         </select>
                         
                         {selectedVenue && (
                             <div className='p-3 bg-yellow-50 rounded text-sm'>
-                                <p className='font-semibold'>Venue Details:</p>
-                                <p className='text-xs text-gray-700'>Capacity: {selectedVenue.capacity.toLocaleString()}</p>
+                                <p className='font-semibold'>Venue Cost:</p>
+                                <p className='text-xs text-gray-700'>Booking Fee: ¥{selectedVenue.cost.toLocaleString()}</p>
+                                <p className='text-xs text-gray-700'>Maintenance/Ops: ¥{selectedVenue.maintenance.toLocaleString()}</p>
                                 <p className='text-red-600 font-bold'>TOTAL INITIAL COST: ¥{(selectedVenue.cost + selectedVenue.maintenance).toLocaleString()}</p>
                             </div>
                         )}
                         
-                        <h4 className="font-semibold mb-1 pt-2 flex items-center"><Users size={16} className='mr-1'/> 3. Select Members ({selectedMembers.length})</h4>
+                        <h4 className="font-semibold mb-1 pt-2">2. Select Setlist</h4>
+                        <select 
+                            value={selectedSetlistId}
+                            onChange={(e) => setSelectedSetlistId(parseInt(e.target.value))}
+                            className="w-full p-2 border rounded"
+                        >
+                            <option value="">-- Select Setlist --</option>
+                            {(allSetlists || []).map(sl => (
+                                <option key={sl.id} value={sl.id}>{sl.name} (Difficulty: {sl.difficulty})</option>
+                            ))}
+                        </select>
+                    </div>
+
+                    {/* Member Selection */}
+                    <div className="col-span-1">
+                        <h4 className="font-semibold mb-2 flex items-center"><Users size={16} className='mr-1'/> 3. Select Members ({selectedMembers.length})</h4>
                         <p className="text-xs text-gray-500 mb-2">Min 5 members required. Stamina will be heavily drained!</p>
                         <MemberSelectionList 
                             members={availableMembers} 
@@ -2187,32 +2107,13 @@ const App = () => {
                             toggleMember={toggleMember} 
                         />
                     </div>
-                    
-                    {/* Track Selection */}
-                    <div className="col-span-2">
-                        <h4 className="font-semibold mb-2 flex items-center"><Music size={16} className='mr-1'/> 2. Select Setlist Tracks ({selectedTracks.length})</h4>
-                        <p className="text-xs text-gray-500 mb-2">Select tracks from your released singles to form the concert setlist.</p>
-                        <div className="max-h-96 overflow-y-auto space-y-2 border p-2 rounded">
-                            {allTracks.map(track => (
-                                <div 
-                                    key={track.id} 
-                                    onClick={() => toggleTrack(track.id)}
-                                    className={`p-2 border rounded text-sm cursor-pointer ${selectedTracks.some(t => t.id === track.id) ? 'bg-red-200' : 'hover:bg-gray-100'}`}
-                                >
-                                    <span className='font-medium'>{track.name}</span>
-                                    <span className='text-xs text-gray-500 block'>({track.group} | {track.isTitle ? 'Title' : 'B-Side'})</span>
-                                </div>
-                            ))}
-                            {allTracks.length === 0 && <p className='text-gray-500 italic'>No songs released yet! Release a single to create a setlist.</p>}
-                        </div>
-                    </div>
                 </div>
 
                 <div className="flex justify-end gap-2 mt-4 pt-4 border-t">
                     <button onClick={() => setShowModal(null)} className="p-2 bg-gray-300 rounded">Cancel</button>
                     <button 
                         onClick={handleConfirm} 
-                        disabled={!selectedVenue || selectedTracks.length === 0 || selectedMembers.length < 5 || money < cost} 
+                        disabled={!selectedVenue || !selectedSetlist || selectedMembers.length < 5 || money < cost} 
                         className="p-3 bg-red-600 text-white rounded font-bold disabled:bg-gray-400"
                     >
                         Book Concert (¥{cost.toLocaleString()})
@@ -2481,10 +2382,15 @@ const App = () => {
                 />
 
                 <div className="flex justify-between gap-2 mt-4 pt-4 border-t">
-                    <button onClick={() => setShowModal(null)} className="p-2 bg-gray-300 rounded">Cancel</button>
-                    <button onClick={handleConfirm} disabled={!teamName.trim() || selectedMembers.length === 0 || !selectedSetlistId} className="p-2 bg-green-500 text-white rounded disabled:bg-gray-400">
-                        Save Changes
+                    <button onClick={handleDelete} className="p-2 bg-red-500 text-white rounded flex items-center gap-1">
+                        <Trash2 size={16}/> Disband
                     </button>
+                    <div className='flex gap-2'>
+                        <button onClick={() => setShowModal(null)} className="p-2 bg-gray-300 rounded">Cancel</button>
+                        <button onClick={handleConfirm} disabled={!teamName.trim() || selectedMembers.length === 0 || !selectedSetlistId} className="p-2 bg-green-500 text-white rounded disabled:bg-gray-400">
+                            Save Changes
+                        </button>
+                    </div>
                 </div>
             </ModalWrapper>
         );
@@ -2562,12 +2468,13 @@ const App = () => {
     };
 
     const MediaJobModal = () => {
-        // Filter members to only include actual main members for solo jobs
+        // Need to filter members to exclude current Kennin members in the main roster to avoid redundancy 
+        // in the list if the user selected a Kennin member in the roster view.
         const availableMainMembers = members.filter(m => m.isAvailable && m.homeGroup === 'main');
         
         return (
             <ModalWrapper title={<span className="flex items-center"><Mic size={20} className="mr-2"/> Send Member to Media Job</span>}>
-                <p className="text-sm text-gray-600 mb-4">Select a member and a strategy for a solo media appearance. Cost: ¥1,000. Only main group members are eligible for now.</p>
+                <p className="text-sm text-gray-600 mb-4">Select a member and a strategy for a solo media appearance. Cost: ¥1,000.</p>
                 
                 <h4 className="font-semibold mb-1">Select Member</h4>
                 <select 
@@ -2775,6 +2682,8 @@ const App = () => {
         );
     };
 
+    // --- END NEW MODALS ---
+
     const MemberParticipationHistory = ({ member }) => { 
       
       const songHistory = (member.songsParticipation || []);
@@ -2788,24 +2697,7 @@ const App = () => {
           <div className="mt-4 border-t pt-4">
               <h4 className="font-semibold mb-2 flex items-center"><Music size={16} className="mr-2"/> Participation History</h4>
               
-              {/* Performance History (RESTORED) */}
-              <p className="text-sm font-medium text-gray-700 mt-3 flex items-center"><ClipboardCheck size={14} className='mr-1 text-blue-500'/> Live Stages ({memberPerformances.length}):</p>
-              <div className="max-h-24 overflow-y-auto text-xs space-y-1 mb-2 p-1 border rounded bg-blue-50">
-                  {memberPerformances.length === 0 && <p className="text-gray-500 italic p-1">No recorded performances.</p>}
-                  {memberPerformances.slice(-5).reverse().map((entry, index) => (
-                      <div key={index} 
-                            className="p-1 rounded bg-blue-100 border border-blue-300 flex justify-between items-center cursor-pointer hover:bg-blue-200"
-                            onClick={() => { setModalData(entry); setShowModal('liveDetails'); }}>
-                          <div>
-                              <p className="font-bold text-blue-800">{entry.name}</p>
-                              <p className="text-gray-600">Category: {entry.category} (Wk {entry.week})</p>
-                          </div>
-                          <ChevronDown size={14}/>
-                      </div>
-                  ))}
-              </div>
-              
-              {/* Title Track History */}
+              {/* Title Track History (NEW) */}
               <p className="text-sm font-medium text-gray-700 mt-3 flex items-center"><Film size={14} className='mr-1 text-red-500'/> Title Tracks ({titleTrackHistory.length}):</p>
               <div className="max-h-24 overflow-y-auto text-xs space-y-1 mb-2 p-1 border rounded bg-red-50">
                   {titleTrackHistory.length === 0 && <p className="text-gray-500 italic p-1">No title track senbatsu positions.</p>}
@@ -2844,27 +2736,198 @@ const App = () => {
       );
     };
     
-    const PerformanceHistoryPanel = () => (
-        <div className='p-4 bg-white rounded-lg shadow-md'>
-            <h2 className="text-xl font-semibold mb-4 flex items-center"><List size={20} className='mr-2'/> Global Performance History ({performanceHistory.length})</h2>
-            <div className='space-y-2 max-h-[80vh] overflow-y-auto'>
-                {performanceHistory.map(p => (
-                    <div 
-                        key={p.id} 
-                        className={`p-3 rounded-lg border flex justify-between items-center cursor-pointer ${p.category === 'Major Concert' ? 'bg-red-50 border-red-300' : 'bg-gray-50 hover:bg-gray-100'}`}
-                        onClick={() => { setModalData(p); setShowModal('liveDetails'); }}
-                    >
-                        <div>
-                            <span className='font-bold'>{p.name}</span>
-                            <p className='text-xs text-gray-600'>Wk {p.week} | {p.category} | Profit: ¥{(p.revenue - p.cost).toLocaleString()}</p>
+    const PyramidRanking = () => {
+      // Use the combined roster for ranking
+      const sortedMembers = getMainGroupRoster();
+      
+      const tiers = {
+          'Center (#1)': sortedMembers.slice(0, 1),
+          'Front Row (#2-3)': sortedMembers.slice(1, 3),
+          'Middle Row (#4-7)': sortedMembers.slice(3, 7),
+          'Back Row (#8-16)': sortedMembers.slice(7, 16),
+          'Under Girls (#17+)': sortedMembers.slice(16),
+      };
+
+      const tierColors = {
+          'Center (#1)': 'bg-yellow-500 text-yellow-900',
+          'Front Row (#2-3)': 'bg-red-400 text-white',
+          'Middle Row (#4-7)': 'bg-indigo-400 text-white',
+          'Back Row (#8-16)': 'bg-gray-400 text-white',
+          'Under Girls (#17+)': 'bg-gray-300 text-gray-800',
+      };
+
+      const maxTierMembers = Math.max(1, ...Object.values(tiers).slice(0, 4).map(t => (t || []).length));
+      const baseWidth = 300; 
+
+      const renderTier = (tierName, tierMembers) => {
+          if ((tierMembers || []).length === 0) return null;
+
+          const memberCount = tierMembers.length;
+          const widthPercentage = tierName === 'Under Girls (#17+)' 
+              ? 1
+              : (memberCount / maxTierMembers);
+              
+          const widthStyle = { 
+              width: tierName === 'Under Girls (#17+)' ? '100%' : `${widthPercentage * 100}%`, 
+              minWidth: '50px', 
+              maxWidth: `${baseWidth + (tierName === 'Under Girls (#17+)' ? 100 : 0)}px` 
+          };
+
+          return (
+              <div key={tierName} className="flex flex-col items-center mb-4 w-full">
+                <div 
+                    className={`p-1 rounded-t-lg shadow-lg text-xs font-bold w-full text-center ${tierColors[tierName]} transition-all duration-300`} 
+                    style={widthStyle}
+                >
+                    {tierName} ({memberCount})
+                </div>
+                <div className="flex justify-center flex-wrap gap-1 p-2 bg-white w-full rounded-b-lg shadow-md border" style={widthStyle}>
+                    {(tierMembers || []).map((m, index) => (
+                        <div key={m.id} 
+                             onClick={() => { setSelectedMember(m); setMemberView('list'); }}
+                             className={`cursor-pointer text-center p-1 rounded-full text-xs font-medium border-2 hover:border-blue-500 transition-colors ${tierName === 'Center (#1)' ? 'bg-yellow-200 border-yellow-700' : 'bg-gray-100 border-gray-300'}`}
+                             title={`${m.name} (#${getMemberRank(m)} | ${(m.fans || 0).toLocaleString()} fans)`}
+                        >
+                            {m.nickname || m.name.split(' ')[0]}
                         </div>
-                        <ChevronDown size={16}/>
+                    ))}
+                </div>
+              </div>
+          );
+      };
+
+      return (
+          <div className="bg-white p-6 rounded-lg shadow-xl flex flex-col items-center mx-auto max-w-full">
+              <h3 className="text-xl font-bold mb-4 flex items-center"><Award size={20} className='mr-2'/> Idol Ranking Pyramid</h3>
+              <p className="text-sm text-gray-500 mb-6 text-center">Hierarchy based on current fan count (Kami 16 are tiered).</p>
+              
+              <div className="flex flex-col items-center w-full">
+                  {renderTier('Under Girls (#17+)', tiers['Under Girls (#17+)'])}
+                  {renderTier('Back Row (#8-16)', tiers['Back Row (#8-16)'])}
+                  {renderTier('Middle Row (#4-7)', tiers['Middle Row (#4-7)'])}
+                  {renderTier('Front Row (#2-3)', tiers['Front Row (#2-3)'])}
+                  {renderTier('Center (#1)', tiers['Center (#1)'])}
+              </div>
+              
+              {sortedMembers.length === 0 && <p className="text-gray-500">Recruit members to see the ranking pyramid!</p>}
+          </div>
+      );
+    };
+    
+    const SisterGroupManagement = () => {
+        const initialSGId = sisterGroups[0]?.id || null;
+        const [currentSisterGroup, setCurrentSisterGroup] = useState(selectedSisterGroup || initialSGId);
+        const selectedGroup = sisterGroups.find(sg => sg.id === currentSisterGroup);
+        
+        useEffect(() => {
+          if (sisterGroups.length > 0 && (!currentSisterGroup || !selectedGroup)) {
+              const newId = sisterGroups[0].id;
+              setCurrentSisterGroup(newId);
+              setSelectedSisterGroup(newId); 
+          } else if (sisterGroups.length === 0) {
+               setCurrentSisterGroup(null);
+               setSelectedSisterGroup(null);
+          }
+        }, [sisterGroups, currentSisterGroup, selectedGroup, setSelectedSisterGroup]);
+
+        if (sisterGroups.length === 0) {
+            return (
+                <div className="p-4 bg-white rounded-lg shadow-md">
+                    <h2 className="text-xl font-semibold mb-3 flex items-center"><Globe size={20} className="mr-2"/> Sister Groups</h2>
+                    <p className='text-gray-500'>No sister groups established yet. Time to expand!</p>
+                    <button onClick={() => setShowModal('createSisterGroup')} className="w-full p-2 bg-red-500 text-white rounded mt-4">
+                      Establish Sister Group (¥250k)
+                    </button>
+                </div>
+            );
+        }
+        
+        const sisterMemberRank = (member, membersList) => {
+            return [...(membersList || [])].sort((a, b) => (b.fans || 0) - (a.fans || 0)).findIndex(m => m.id === member.id) + 1;
+        };
+        
+        const handleSelectSGMember = (member, sgId) => {
+          const sg = sisterGroups.find(g => g.id === sgId);
+          setSelectedMember({
+              ...member,
+              id: `sg-${sgId}-${member.id}`,
+              name: `${member.name} (${sg?.name || 'Unknown'})`,
+              isSister: true,
+              groupId: sgId
+          });
+          setCurrentTab('members');
+        };
+        
+        const openDisbandModal = () => {
+          if (selectedGroup) {
+              setModalData(selectedGroup);
+              setShowModal('sisterGroupDisband');
+          }
+        }
+
+        return (
+            <div className="bg-white p-4 rounded-lg shadow-md">
+                <h2 className="text-xl font-semibold mb-3 flex items-center"><Globe size={20} className="mr-2"/> Sister Group Management</h2>
+                
+                <select 
+                    value={currentSisterGroup || ''}
+                    onChange={(e) => {
+                      const newId = parseInt(e.target.value);
+                      setCurrentSisterGroup(newId);
+                      setSelectedSisterGroup(newId);
+                    }}
+                    className="w-full p-2 border rounded mb-4 bg-gray-50"
+                >
+                    {(sisterGroups || []).map(sg => (
+                        <option key={sg.id} value={sg.id}>{sg.name} ({sg.location})</option>
+                    ))}
+                </select>
+
+                {selectedGroup && (
+                    <div>
+                        <div className='flex justify-between items-center mb-3 p-3 bg-blue-50 rounded-lg'>
+                            <div>
+                                <p className='font-bold text-lg'>{selectedGroup.name}</p>
+                                <p className="text-sm text-gray-600">Fans: {selectedGroup.fans.toLocaleString()} | Weekly Income: ¥{selectedGroup.income.toLocaleString()}</p>
+                            </div>
+                            <div className='flex gap-2'>
+                                <button onClick={() => holdSisterGroupShow(selectedGroup.id)} className="px-3 py-1 bg-yellow-500 text-white text-sm rounded-md shadow-sm">
+                                  Show (¥10k)
+                                </button>
+                                
+                                <button onClick={() => recruitSisterGroupMember(selectedGroup.id)} className="px-3 py-1 bg-green-500 text-white text-sm rounded-md shadow-sm">
+                                  Recruit (¥10k)
+                                </button>
+                                <button onClick={openDisbandModal} className="px-3 py-1 bg-red-500 text-white text-sm rounded-md shadow-sm">
+                                  <Trash2 size={16} className='inline mr-1'/> Disband
+                                </button>
+                            </div>
+                        </div>
+
+                        <h4 className="font-semibold mb-2">Member Roster ({selectedGroup.members.length})</h4>
+                        <div className="max-h-80 overflow-y-auto space-y-2">
+                            {(selectedGroup.members || []).sort((a, b) => sisterMemberRank(a, selectedGroup.members) - sisterMemberRank(b, selectedGroup.members)).map(m => (
+                                <div key={m.id} 
+                                     className={`p-3 border rounded bg-gray-50 flex justify-between items-center cursor-pointer ${selectedMember && String(selectedMember.id) === `sg-${selectedGroup.id}-${m.id}` ? 'border-2 border-blue-500 ring-2 ring-blue-200 bg-blue-50' : 'hover:bg-gray-100'}`}
+                                     onClick={() => handleSelectSGMember(m, selectedGroup.id)}
+                                >
+                                    <div>
+                                        <span className="font-bold">{m.name} {m.kenninGroups?.includes('main') ? '(Kennin)' : ''}</span>
+                                        <p className="text-xs text-gray-600">
+                                            Rank: #{sisterMemberRank(m, selectedGroup.members)} | Variety: {m.variety}
+                                        </p>
+                                    </div>
+                                    <button className="p-1 bg-yellow-400 text-white rounded text-xs">
+                                        View/Manage
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
                     </div>
-                ))}
-                {performanceHistory.length === 0 && <p className='text-gray-500 italic'>No performances recorded yet.</p>}
+                )}
             </div>
-        </div>
-    );
+        );
+    };
 
 
     // --- STYLES/HELPERS ---
@@ -3029,7 +3092,7 @@ const App = () => {
               <SisterGroupManagement />
             )}
 
-            {/* ----- MANAGEMENT TAB (NOW INCLUDES HISTORY) ----- */}
+            {/* ----- MANAGEMENT TAB ----- */}
             {currentTab === 'management' && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Performance & Elections */}
@@ -3063,6 +3126,8 @@ const App = () => {
                     <button onClick={() => setShowModal('majorConcert')} className="w-full p-2 bg-red-600 text-white rounded font-bold" disabled={!!activeTour || songs.length === 0}>
                         <Trophy size={18} className='inline mr-1'/> Book Major Concert
                     </button>
+
+                    {/* Major Concerts Button DEPRECATED/REMOVED */}
                     
                     <h4 className='font-bold text-gray-700 mt-4 mb-1'>Strategic Actions:</h4>
                     <button onClick={holdElection} className="w-full p-2 bg-purple-500 text-white rounded font-bold">Hold Election (¥5k)</button>
@@ -3091,11 +3156,49 @@ const App = () => {
                     </button>
                   </div>
                 </div>
-                
-                {/* Performance History (NEW TAB) */}
-                <div className='md:col-span-2'>
-                    <PerformanceHistoryPanel />
+
+                {/* Teams & Setlists */}
+                <div className="bg-white p-4 rounded-lg shadow-md col-span-1">
+                  <h3 className="text-lg font-semibold mb-4 flex items-center"><Users size={20} className="mr-2"/> Theater Teams & Setlists</h3>
+                  <div className="grid grid-cols-1 gap-2 max-h-40 overflow-y-auto mb-2">
+                    {(teams || []).map(team => (
+                      <div key={team.id} className="p-2 border rounded bg-gray-50 flex justify-between items-center">
+                        <div>
+                          <span className="font-bold">{team.name} ({team.members.length} members)</span>
+                          <p className="text-xs text-gray-500">
+                            Setlist: {(allSetlists || []).find(s => s.id === team.currentSetlistId)?.name || 'None'}
+                          </p>
+                        </div>
+                        <button onClick={() => editTeam(team.id)} className="p-1 bg-yellow-400 text-white rounded hover:bg-yellow-500"><Edit size={16}/></button>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex gap-2 mt-2">
+                      <button onClick={createTeam} className="flex-1 p-2 bg-blue-500 text-white rounded" disabled={!buildings.theater}>
+                        Create New Team
+                      </button>
+                      <button onClick={createCustomSetlist} className="flex-1 p-2 bg-indigo-500 text-white rounded" disabled={!buildings.theater}>
+                        <Plus size={16} className='inline mr-1'/> Custom Setlist
+                      </button>
+                  </div>
                 </div>
+
+                {/* Sister Groups */}
+                <div className="bg-white p-4 rounded-lg shadow-md col-span-1">
+                  <h3 className="text-lg font-semibold mb-4 flex items-center"><Globe size={20} className="mr-2"/> Group Expansion ({sisterGroups.length})</h3>
+                  <div className="grid grid-cols-1 gap-2 max-h-40 overflow-y-auto mb-2">
+                      {(sisterGroups || []).map(sg => (
+                          <div key={sg.id} className="p-2 border rounded bg-gray-50">
+                              <span className="font-bold">{sg.name}</span>
+                              <p className="text-xs text-gray-500 flex items-center"><MapPin size={12} className='mr-1'/>{sg.location} | Members: {(sg.members || []).length}</p>
+                          </div>
+                      ))}
+                  </div>
+                  <button onClick={() => setShowModal('createSisterGroup')} className="w-full p-2 bg-red-500 text-white rounded mt-2">
+                    Establish Sister Group (¥250k)
+                  </button>
+                </div>
+
               </div>
             )}
 
@@ -3349,7 +3452,6 @@ const App = () => {
         {showModal === 'sisterGroupDisband' && modalData && <SisterGroupDisbandModal />}
         {showModal === 'performancePrep' && <PerformanceModal />}
         {showModal === 'majorConcert' && <MajorConcertModal />}
-        {showModal === 'liveDetails' && modalData && <LivePerformanceDetailsModal />}
         
       </div>
     );
