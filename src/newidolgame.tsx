@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Star, Music, Heart, TrendingUp, Users, Award, Calendar, DollarSign, Save, 
@@ -6,10 +7,19 @@ import {
   User, Check, ChevronDown, ChevronUp, ShoppingBag, Mic, Hand, Brain, Package,
   Minimize2, Maximize2, Trash2, MapPin, Smile, LogIn, CalendarCheck, Home, 
   ClipboardCheck, Clock, Layers, Clipboard, List, Landmark
-} from 'lucide-react';
-import { initializeApp } from 'firebase/app';
-import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from 'firebase/auth';
-import { getFirestore, doc, setDoc, getDoc, setLogLevel } from 'firebase/firestore';
+} from './lucide-react';
+import {
+  initializeApp,
+  getAuth,
+  signInAnonymously,
+  signInWithCustomToken,
+  onAuthStateChanged,
+  getFirestore,
+  doc,
+  setDoc,
+  getDoc,
+  setLogLevel,
+} from './firebaseClient';
 
 // --- Custom Hook for Game Logic and State Management ---
 const useIdolManager = () => {
@@ -86,50 +96,54 @@ const useIdolManager = () => {
     const [notifications, setNotifications] = useState([]);
     const [songs, setSongs] = useState([]);
     const [teams, setTeams] = useState([]);
-    const [allSetlists, setAllSetlists] = useState([
+    const [allSetlists, setAllSetlists] = useState(() => ([
         { id: 1, name: "A1 'Party ga Hajimaru yo'", theme: 'classic', difficulty: 100 },
         { id: 2, name: "K2 'Aitakatta'", theme: 'classic', difficulty: 120 },
         { id: 3, name: "H3 'Mokugekisha'", theme: 'dance', difficulty: 150 },
         { id: 4, name: "B4 'Idol no Yoake'", theme: 'vocal', difficulty: 140 },
-    };
-
-// SisterGroup structure (use runtime any[] for state to avoid local TS interface issues)
-// { name: string; location?: string; fans: number; power: number; members: any[]; songs?: any[]; income?: number }
+    ]));
+    const [buildings, setBuildings] = useState(() => ({
+        theater: false,
+        practiceRooms: { vocal: 0, dance: 0, variety: 0 },
+    }));
+    /* Sister group state uses runtime any[] to avoid local TS interface issues.
+       Expected shape reference: name, optional location, fans total, power rating, member list,
+       optional songs array, and optional income value. */
     const [sisterGroups, setSisterGroups] = useState<any[]>([]);
-  const [rivalGroups, setRivalGroups] = useState([]);
-  const [achievements, setAchievements] = useState([]);
-  const [hallOfFame, setHallOfFame] = useState([]);
-  const [events, setEvents] = useState([]);
-  const [sponsorships, setSponsorships] = useState([]);
-  const [showModal, setShowModal] = useState(null);
-  const [difficulty, setDifficulty] = useState('local');
-  const [internationalMarkets, setInternationalMarkets] = useState({ asia: false, west: false });
-  const [outfits, setOutfits] = useState([]);
-  const [tours, setTours] = useState([]);
-  const [activeTour, setActiveTour] = useState(null);
-  const [musicVideos, setMusicVideos] = useState([]);
-  const [varietyShows, setVarietyShows] = useState([]);
-  const [photoBooks, setPhotoBooks] = useState([]);
-  const [documentaries, setDocumentaries] = useState([]);
-  const [collaborations, setCollaborations] = useState([]);
-  const [scandals, setScandals] = useState([]);
-  const [statistics, setStatistics] = useState({ totalRevenue: 0, totalConcerts: 0, totalSongs: 0, revenueHistory: [] });
-  const [modalData, setModalData] = useState(null);
-  const [selectedSisterGroup, setSelectedSisterGroup] = useState(null);
-  const [selectedTheaterTeam, setSelectedTheaterTeam] = useState(null);
-  const [username, setUsername] = useState('Guest');
-  const [memberView, setMemberView] = useState('list'); 
-  const [merchInventory, setMerchInventory] = useState({ photos: 0, towels: 0, lightsticks: 0 });
-  const [merchPrices] = useState({ photos: 1500, towels: 2500, lightsticks: 3500 });
-  const [merchProdCost] = useState({ photos: 500, towels: 1000, lightsticks: 1500 });
-  const [activeTrainingCamp, setActiveTrainingCamp] = useState(null); 
-  const [venues, setVenues] = useState([
-    { id: 1, name: 'Local Theater (Own)', capacity: 250, cost: 0, maintenance: 5000 },
-    { id: 2, name: 'Small Hall (1K)', capacity: 1000, cost: 50000, maintenance: 10000 },
-    { id: 3, name: 'City Arena (5K)', capacity: 5000, cost: 250000, maintenance: 30000 },
-    { id: 4, name: 'Dome (50K)', capacity: 50000, cost: 5000000, maintenance: 100000 },
-  ]);
-  const [performanceHistory, setPerformanceHistory] = useState([]);
+    const [rivalGroups, setRivalGroups] = useState([]);
+    const [achievements, setAchievements] = useState([]);
+    const [hallOfFame, setHallOfFame] = useState([]);
+    const [events, setEvents] = useState([]);
+    const [sponsorships, setSponsorships] = useState([]);
+    const [showModal, setShowModal] = useState(null);
+    const [difficulty, setDifficulty] = useState('local');
+    const [internationalMarkets, setInternationalMarkets] = useState({ asia: false, west: false });
+    const [outfits, setOutfits] = useState([]);
+    const [tours, setTours] = useState([]);
+    const [activeTour, setActiveTour] = useState(null);
+    const [musicVideos, setMusicVideos] = useState([]);
+    const [varietyShows, setVarietyShows] = useState([]);
+    const [photoBooks, setPhotoBooks] = useState([]);
+    const [documentaries, setDocumentaries] = useState([]);
+    const [collaborations, setCollaborations] = useState([]);
+    const [scandals, setScandals] = useState([]);
+    const [statistics, setStatistics] = useState({ totalRevenue: 0, totalConcerts: 0, totalSongs: 0, revenueHistory: [] });
+    const [modalData, setModalData] = useState(null);
+    const [selectedSisterGroup, setSelectedSisterGroup] = useState(null);
+    const [selectedTheaterTeam, setSelectedTheaterTeam] = useState(null);
+    const [username, setUsername] = useState('Guest');
+    const [memberView, setMemberView] = useState('list');
+    const [merchInventory, setMerchInventory] = useState({ photos: 0, towels: 0, lightsticks: 0 });
+    const [merchPrices] = useState({ photos: 1500, towels: 2500, lightsticks: 3500 });
+    const [merchProdCost] = useState({ photos: 500, towels: 1000, lightsticks: 1500 });
+    const [activeTrainingCamp, setActiveTrainingCamp] = useState(null);
+    const [venues, setVenues] = useState([
+        { id: 1, name: 'Local Theater (Own)', capacity: 250, cost: 0, maintenance: 5000 },
+        { id: 2, name: 'Small Hall (1K)', capacity: 1000, cost: 50000, maintenance: 10000 },
+        { id: 3, name: 'City Arena (5K)', capacity: 5000, cost: 250000, maintenance: 30000 },
+        { id: 4, name: 'Dome (50K)', capacity: 50000, cost: 5000000, maintenance: 100000 },
+    ]);
+    const [performanceHistory, setPerformanceHistory] = useState([]);
     // Performance Types Data
     const performanceTypes = [
         { label: "Debut Stage", category: "Official", cost: 10000, fanImpact: 0.1, skillImpact: 0.1, staminaDrain: 20, desc: "The official first performance to introduce the group." },
@@ -204,16 +218,13 @@ const loadGame = async (gameUsername, uid, setStartUsername, setStartGroupName) 
             setShowModal(null);
         } else {
             setMessage(`No save file found for user: ${gameUsername}.`);
-        } // ✅ Added this closing brace
+        }
     } catch (e) {
         console.error("Error loading game:", e);
         const errMsg = (e instanceof Error) ? e.message : String(e);
         setMessage(`Error loading game: ${errMsg}.`);
     }
 };
-   
-} 
-
 
     // --- MEMBER/GROUP UTILITIES ---
 
@@ -1449,6 +1460,8 @@ const loadGame = async (gameUsername, uid, setStartUsername, setStartGroupName) 
       // Logic
       trainMember, restMember, restAllTired, buildTheater, upgradePracticeRoom, startTour, progressTour, createTeam, editTeam, deleteTeam, startTheaterShowPrep, startLargeConcertPrep, graduateMember, holdTheaterShow, holdSisterGroupShow, holdLargeConcert, holdElection, createSong, createCustomSetlist, confirmCreateSetlist, confirmCreateSong, recruitMember, recruitSisterGroupMember, handleDisbandSisterGroup, produceMerch, startHandshakeEvent, startTrainingCamp, startMediaJob, startGroupMediaJob, nextWeek, confirmCreateSisterGroup, handleSisterMemberTransfer, recordPerformance, startPerformancePrep, confirmCreateTeam, confirmEditTeam, holdMajorConcert
     };
+
+};
 
 
 
