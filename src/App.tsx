@@ -1,4 +1,3 @@
-import React from 'react'
 import NewIdolGame from './newidolgame'
 
 function App() {
