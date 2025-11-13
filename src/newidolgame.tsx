@@ -246,12 +246,42 @@ const loadGame = async (gameUsername, uidParam, setStartUsername, setStartGroupN
 
     if (docSnap.exists()) {
       const data = docSnap.data();
-      // ✅ restore state like your original code...
+      // RESTORE EVERYTHING YOU SAVED
       setGroupName(data.groupName || "");
       setMoney(data.money || 0);
       setWeek(data.week || 1);
-      setMembers(data.members ? JSON.parse(data.members) : []);
-      // ... (rest of your restore logic)
+
+      setMembers(JSON.parse(data.members || "[]"));
+      setTotalFans(data.totalFans || 0);
+      setSongs(JSON.parse(data.songs || "[]"));
+      setTeams(JSON.parse(data.teams || "[]"));
+      setAllSetlists(JSON.parse(data.allSetlists || "[]"));
+      setBuildings(JSON.parse(data.buildings || "[]"));
+
+      // 🔴 This is the one you are missing
+      setSisterGroups(JSON.parse(data.sisterGroups || "[]"));
+
+      setRivalGroups(JSON.parse(data.rivalGroups || "[]"));
+      setAchievements(JSON.parse(data.achievements || "[]"));
+      setHallOfFame(JSON.parse(data.hallOfFame || "[]"));
+      setEvents(JSON.parse(data.events || "[]"));
+      setSponsorships(JSON.parse(data.sponsorships || "[]"));
+      setDifficulty(data.difficulty || "normal");
+      setInternationalMarkets(JSON.parse(data.internationalMarkets || "[]"));
+      setOutfits(JSON.parse(data.outfits || "[]"));
+      setTours(JSON.parse(data.tours || "[]"));
+      setActiveTour(JSON.parse(data.activeTour || "null"));
+      setMusicVideos(JSON.parse(data.musicVideos || "[]"));
+      setVarietyShows(JSON.parse(data.varietyShows || "[]"));
+      setPhotoBooks(JSON.parse(data.photoBooks || "[]"));
+      setDocumentaries(JSON.parse(data.documentaries || "[]"));
+      setCollaborations(JSON.parse(data.collaborations || "[]"));
+      setScandals(JSON.parse(data.scandals || "[]"));
+      setStatistics(JSON.parse(data.statistics || "{}"));
+      setMerchInventory(JSON.parse(data.merchInventory || "{}"));
+      setActiveTrainingCamp(JSON.parse(data.activeTrainingCamp || "null"));
+      setVenues(JSON.parse(data.venues || "[]"));
+      setPerformanceHistory(JSON.parse(data.performanceHistory || "[]"));
       setGameStarted(true);
       setMessage(`🎮 Game loaded for ${data.username || gameUsername}!`);
       setShowModal(null);
@@ -267,16 +297,16 @@ const loadGame = async (gameUsername, uidParam, setStartUsername, setStartGroupN
     // --- MEMBER/GROUP UTILITIES ---
 
     const generateRandomName = () => {
-      const firstNames = ['Yui', 'Sakura', 'Miku', 'Haruka', 'Rina', 'Nana', 'Akari', 'Yuki', 'Aoi', 'Hana', 'Karin', 'Miyu', 'Saki', 'Hinata', 'Riko', 'Ayaka', 'Mei', 'Eri', 'Mio', 'Yuna'];
-      const lastNames = ['Tanaka', 'Sato', 'Suzuki', 'Takahashi', 'Watanabe', 'Yamamoto', 'Kobayashi', 'Nakamura', 'Ito', 'Kato', 'Yoshida', 'Yamada'];
+      const firstNames = ['Yui','Sakura','Miku','Haruka','Rina','Nana','Akari','Yuki','Aoi','Hana','Karin','Miyu','Saki','Hinata','Riko','Ayaka','Mei','Eri','Mio','Yuna','Kotone','Sumire','Reina','Noa','Tomomi','Hiyori','Ami','Nao','Sayaka','Asuka','Chihiro','Emi','Kokona','Misaki','Saeko','Nanami','Shiori','Aya','Kazumi','Arisa','Marina','Kanna','Azusa','Rin','Fumika','Suzuka','Nene','Akane','Mai','Yuuri','Seira','Momoka','Rei','Tsukasa','Ichika','Mafuyu','Yume','Kyouka','Maho','Sena','Tsumugi','Yurina','Himari','Mirei','Honoka','Ririka','Natsuki','Hikaru','Aina','Shizuku','Ryou','Kaho','Minori','Mariya','Ayame','Kokoro','Misao','Rion','Moeka','Haruna','Mariya','Yuuna','Mizuki','Kanako','Ema','Suzu','Kotoha','Nagisa','Ayumi','Riona','Yuzuki','Mina','Chiaki','Nozomi','Miharu','Haruno','Risa','Saaya','Airu'];
+      const lastNames = ['Tanaka','Sato','Suzuki','Takahashi','Watanabe','Yamamoto','Kobayashi','Nakamura','Ito','Kato','Yoshida','Yamada','Sasaki','Yamaguchi','Matsumoto','Inoue','Kimura','Shimizu','Hayashi','Saito','Abe','Fujita','Okada','Goto','Kondo','Ishikawa','Nakajima','Harada','Otsuka','Hasegawa','Murakami','Kojima','Takagi','Kuroda','Takeda','Imai','Ando','Fukuda','Miyazaki','Ueda','Shibata','Kawai','Nagano','Hirano','Mizuno','Ono','Fujii','Sugiyama','Kishida','Endo','Noguchi','Oshima','Sakurai','Mochizuki','Tsukada','Aoki','Morimoto','Tamura','Oda','Matsuda','Azuma','Nishida','Sugimoto','Kubota','Kawamura','Ishii','Nakano','Kanda','Morita','Nagata','Ogawa','Kinoshita','Mori','Yoshikawa','Kawasaki','Higuchi','Suenaga','Kaneko','Miyamoto','Shinozaki','Kawaguchi','Hosoda','Koga','Okamoto','Kamei','Tsutsui','Arakawa','Imamura','Furukawa','Nishimura','Kubo','Okumura','Masuda','Ishida','Kojima','Asano','Fukumoto','Sakai'];
       const firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
       const lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
       return `${firstName} ${lastName}`;
     };
 
     const generateMembers = () => {
-      const firstNames = ['Yui', 'Sakura', 'Miku', 'Haruka', 'Rina', 'Nana', 'Akari', 'Yuki', 'Aoi', 'Hana', 'Karin', 'Miyu', 'Saki', 'Hinata', 'Riko', 'Ayaka'];
-      const lastNames = ['Tanaka', 'Sato', 'Suzuki', 'Takahashi', 'Watanabe', 'Yamamoto', 'Kobayashi', 'Nakamura'];
+      const firstNames = ['Yui','Sakura','Miku','Haruka','Rina','Nana','Akari','Yuki','Aoi','Hana','Karin','Miyu','Saki','Hinata','Riko','Ayaka','Mei','Eri','Mio','Yuna','Kotone','Sumire','Reina','Noa','Tomomi','Hiyori','Ami','Nao','Sayaka','Asuka','Chihiro','Emi','Kokona','Misaki','Saeko','Nanami','Shiori','Aya','Kazumi','Arisa','Marina','Kanna','Azusa','Rin','Fumika','Suzuka','Nene','Akane','Mai','Yuuri','Seira','Momoka','Rei','Tsukasa','Ichika','Mafuyu','Yume','Kyouka','Maho','Sena','Tsumugi','Yurina','Himari','Mirei','Honoka','Ririka','Natsuki','Hikaru','Aina','Shizuku','Ryou','Kaho','Minori','Mariya','Ayame','Kokoro','Misao','Rion','Moeka','Haruna','Mariya','Yuuna','Mizuki','Kanako','Ema','Suzu','Kotoha','Nagisa','Ayumi','Riona','Yuzuki','Mina','Chiaki','Nozomi','Miharu','Haruno','Risa','Saaya','Airu'];
+      const lastNames = ['Tanaka','Sato','Suzuki','Takahashi','Watanabe','Yamamoto','Kobayashi','Nakamura','Ito','Kato','Yoshida','Yamada','Sasaki','Yamaguchi','Matsumoto','Inoue','Kimura','Shimizu','Hayashi','Saito','Abe','Fujita','Okada','Goto','Kondo','Ishikawa','Nakajima','Harada','Otsuka','Hasegawa','Murakami','Kojima','Takagi','Kuroda','Takeda','Imai','Ando','Fukuda','Miyazaki','Ueda','Shibata','Kawai','Nagano','Hirano','Mizuno','Ono','Fujii','Sugiyama','Kishida','Endo','Noguchi','Oshima','Sakurai','Mochizuki','Tsukada','Aoki','Morimoto','Tamura','Oda','Matsuda','Azuma','Nishida','Sugimoto','Kubota','Kawamura','Ishii','Nakano','Kanda','Morita','Nagata','Ogawa','Kinoshita','Mori','Yoshikawa','Kawasaki','Higuchi','Suenaga','Kaneko','Miyamoto','Shinozaki','Kawaguchi','Hosoda','Koga','Okamoto','Kamei','Tsutsui','Arakawa','Imamura','Furukawa','Nishimura','Kubo','Okumura','Masuda','Ishida','Kojima','Asano','Fukumoto','Sakai'];
       return Array.from({ length: 8 }, (_, i) => ({
         id: i + 1,
         name: `${firstNames[i]} ${lastNames[i % 4]}`,
@@ -334,21 +364,34 @@ const loadGame = async (gameUsername, uidParam, setStartUsername, setStartGroupN
     };
     
     // UTILITY: Returns the main group roster including Kennin members for display.
-    const getMainGroupRoster = () => {
-        let roster = [...members]; // Main members
-        
-        (sisterGroups || []).forEach(sg => {
-            (sg.members || []).forEach(m => {
-                // Check if the sister member is available and kennin'd to the main group ('main')
-                if ((m.kenninGroups || []).includes('main') && m.isAvailable) {
-                    roster.push({
-                        ...m, 
-                        // Use the combined ID for consistency in selection
-                        id: `sg-${sg.id}-${m.id}`, 
-                        name: `${m.name} (K: ${sg.name})`, // Clearly mark as Kennin
-                        isSister: true,
-                        groupId: sg.id,
-                        isKennin: true 
+const getMainGroupRoster = () => {
+    let roster = [...members]; // Main members
+
+    (sisterGroups || []).forEach(sg => {
+        (sg.members || []).forEach(m => {
+
+            // 1. Kennin from sister → main
+            if ((m.kenninGroups || []).includes('main') && m.isAvailable) {
+                roster.push({
+                    ...m,
+                    id: `sg-${sg.id}-${m.id}`,
+                    name: `${m.name} (K: ${sg.name})`,
+                    isSister: true,
+                    groupId: sg.id,
+                    isKennin: true
+                });
+                return;
+            }
+
+            // 2. Transferred main → sister members
+            if (m.homeGroup !== 'main' && m.isAvailable) {
+                roster.push({
+                    ...m,
+                    id: `sg-${sg.id}-${m.id}`,
+                    name: `${m.name} (${sg.name})`,
+                    isSister: true,
+                    groupId: sg.id,
+                    isKennin: false
                     });
                 }
             });
@@ -419,20 +462,32 @@ const loadGame = async (gameUsername, uidParam, setStartUsername, setStartGroupN
       }
     };
 
-    const getMemberGroupStatus = (member) => {
-      let parts = [];
-      if (!member.isAvailable) {
-          parts.push("On Assignment");
-      } else if (member.homeGroup && member.homeGroup !== 'main') {
-        parts.push(`Group: ${member.homeGroup}`);
-      } else {
-        parts.push(`Group: ${groupName}`);
-      }
-      if (member.kenninGroups?.length > 0) {
-        parts.push(`Kennin: ${member.kenninGroups.join(', ')}`);
-      }
-      return parts.join(' | ');
-    };
+const getMemberGroupStatus = (member) => {
+  let parts = [];
+
+  // --- Home Group Text ---
+  if (!member.isAvailable) {
+    parts.push("On Assignment");
+  } else if (member.homeGroup && member.homeGroup !== "main") {
+    const sg = sisterGroups?.find(g => g.id === member.homeGroup);
+    parts.push(`Group: ${sg ? sg.name : member.homeGroup}`);
+  } else {
+    parts.push(`Group: ${groupName}`);
+  }
+
+  // --- Kennin Groups Text ---
+  if (member.kenninGroups?.length > 0) {
+    const kenninNames = member.kenninGroups.map(id => {
+      if (id === "main") return groupName;                // FIX #1
+      const sg = sisterGroups?.find(g => g.id === id);    // FIX #2
+      return sg ? sg.name : id;
+    });
+
+    parts.push(`Kennin: ${kenninNames.join(", ")}`);
+  }
+
+  return parts.join(" | ");
+};
 
     const getMemberRank = (member) => [...(members || [])].sort((a, b) => (b.fans || 0) - (a.fans || 0)).findIndex(m => m.id === member.id) + 1;
 
@@ -1483,8 +1538,8 @@ const App = () => {
 
     // Utility function to generate a random name for the startup screen
     const generateRandomGroupName = () => {
-      const prefixes = ['Star', 'Dream', 'Future', 'Cherry', 'Rainbow', 'Crystal', 'Galaxy', 'Sakura', 'Shining'];
-      const suffixes = ['48', 'N46', 'Key', 'Girls', 'Project', 'Idols', 'Stars', 'Z'];
+    const prefixes = ['Hoshi','Sakura','Tsuki','Ame','Yume','Hana','Aoi','Hikari','Mizu','Kumo','Kaze','Yuki','Kokoro','Akari','Nozomi','Kiseki','Seika','Ameiro','Momoiro','Aozora','Hoshimi','Hanabi','Miyabi','Tokimeki','Ariake','Kouyou','Asahi','Kouka','Suiren','Kurenai','Starlit','Moonlite','Petalix','Blossia','KiraKira','Sparkleon','Dreamia','Twinkia','Glowin','Lumina','Aurasia','MiraiX','Flawra','Cherrix','Fantasia','Hoshira','Sakurive','Prismia','Melodia','Radiant','Hanaria','Yumelia','Akuria','Sakurune','Hoshika','Tsukira','Fuwaria','Kirafine','Mizura','Aozelle','Momoria','Nijika','Haruline','Kokolia','Amelune','Lunaria','Miraiya','Shinoria','Tokira','Asteria'];
+    const suffixes = ['48','N46','Key','Girls','Project','Idols','Stars','Z','Unit','Crew','X','Wave','Beat','Stage','Dream','Lite','Mode','Charm','Flow','Vision','Tone','Pop','Bloom','Rise','Edge','Link','Sphere','Note','Line','46','Team','Stage48','Factory','Palette','Branch','Station','Campus','Zaka','Slope','District','Section','Division','Area','Side','Point','Club','Chuu','Hearts','Notes','Melody','Rabbits','Dreamers','Angels','Spark','Fantasy','Rhythm','Harmony','Kyun','ChuChu','Piyo','Puff','Mochi','Luv','Nyan','Koko','Poko','Ruru'];
       const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
       const suffix = suffixes[Math.floor(Math.random() * suffixes.length)];
       setStartGroupName(`${prefix}${suffix}`);
@@ -1678,7 +1733,7 @@ const App = () => {
       let selectableMembers = [];
       if (targetGroup === 'main') {
           const mainMembers = members.filter(m => m.homeGroup === 'main' && m.isAvailable);
-          const sgMembers = getAllAvailableMembers(true).filter(m => m.isSister && (m.kenninGroups || []).includes('main'));
+          const sgMembers = getAllAvailableMembers(true).filter(m => m.isSister && m.isAvailable);
           selectableMembers = [...mainMembers, ...sgMembers];
       } else {
           const sg = sisterGroups.find(s => s.name === targetGroup);
@@ -1833,7 +1888,7 @@ const App = () => {
 
               <div className="col-span-2">
                   <h4 className="font-semibold mb-2">Senbatsu Selection for: <span className="text-blue-600 dark:text-blue-400">{currentTrack?.name || 'Track'}</span></h4>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">Select members. Main group singles can include Kennin Sister Group members.</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">Select members. Main group singles can include Sister Group members.</p>
                   
                   <MemberSelectionList 
                       members={selectableMembers} 
@@ -2438,75 +2493,194 @@ const App = () => {
     };
     
     // --- Existing modals with missing functions that will be added in future steps ---
-    const MoveMemberModal = () => {
-        const member = modalData;
-        const [targetGroup, setTargetGroup] = useState(member?.homeGroup === 'main' ? 'main' : member?.homeGroup);
-        const isSister = member?.isSister;
-        
-        if (!member) return null;
+const MoveMemberModal = () => {
+    const member = modalData;
 
-        const handleConfirm = (action) => {
-            if (isSister) {
-                // Sister group member transfer/kennin logic is already handled in the hook
-                handleSisterMemberTransfer(member, action);
-            } else {
-                // Main group member transfer/kennin logic (Not fully implemented yet, but modal exists)
-                setMessage('Moving main group members is not yet implemented. Check back later!');
-                setShowModal(null);
+    // SAFETY FIX: Prevent crash on first render
+    if (!member) return null;
+
+    const isSister = !!member.isSister;
+
+    // ========== STATE FOR MAIN → SISTER =============
+    const [targetGroup, setTargetGroup] = useState(member.homeGroup || "");
+
+    // ========== MAIN → SISTER LOGIC (your new one) ==========
+    const handleMainMemberTransfer = (member, action, targetGroupId) => {
+        const cost = 50000;
+
+        if (money < cost) {
+            setMessage("Not enough money!");
+            return;
+        }
+
+        const updatedMember = { ...member };
+
+        if (action === "transfer") {
+            updatedMember.homeGroup = targetGroupId;
+            updatedMember.isSister = true;
+            updatedMember.kenninGroups = [];
+        }
+
+        if (action === "kennin") {
+            updatedMember.kenninGroups = [
+                ...(member.kenninGroups || []),
+                targetGroupId
+            ];
+            updatedMember.isSister = true;
+        }
+
+        updateMember(updatedMember);
+        setMoney(money - cost);
+
+        setMessage(`Successfully updated ${member.name}'s group assignment.`);
+        setShowModal(null);
+    };
+
+    // ========== HANDLE CONFIRM (merged logic) ==========
+    const handleConfirm = (action) => {
+        if (!isSister) {
+            if (!targetGroup) {
+                setMessage("Please select a sister group!");
+                return;
             }
-        };
+            return handleMainMemberTransfer(member, action, targetGroup);
+        }
 
+        // Sister → Main (your old function)
+        handleSisterMemberTransfer(member, action);
+    };
+
+    // ========== SISTER → MAIN (old UI, unchanged) ==========
+    if (member.isSister) {
         return (
-            <ModalWrapper title={<span className="flex items-center"><Maximize2 size={20} className="mr-2"/> Manage Member Location</span>}>
-                <p className="text-sm text-gray-600 mb-4">Options for managing <span className='font-bold'>{member.name}</span>'s group assignment.</p>
+            <ModalWrapper title={<span className="flex items-center text-red-600"><Plane size={20} className="mr-2"/> SG Integration: {member.name}</span>} maxWidth="max-w-xl">
+                <p className="mb-4 text-gray-700">Cost: **¥50,000** for transfer or kennin membership. This gives {member.name} access to Main Group activities.</p>
                 
-                {isSister ? (
-                    <div className="space-y-3">
-                        <h4 className="font-semibold text-red-500">Member is currently in {member.homeGroup}.</h4>
-                        <button 
-                            onClick={() => handleConfirm('transfer')} 
-                            className="w-full p-3 bg-indigo-100 text-indigo-800 rounded font-bold border-l-4 border-indigo-500 hover:bg-indigo-200 transition-colors"
-                        >
-                            Transfer to {groupName} (¥50,000)
-                            <p className="text-xs font-normal">Moves the member to the main roster permanently.</p>
-                        </button>
-                        <button 
-                            onClick={() => handleConfirm('kennin')} 
-                            className="w-full p-3 bg-yellow-100 text-yellow-800 rounded font-bold border-l-4 border-yellow-500 hover:bg-yellow-200 transition-colors"
-                        >
-                            Kennin in {groupName} (¥50,000)
-                            <p className="text-xs font-normal">Member can work in both groups, maintaining their spot in {member.homeGroup}.</p>
-                        </button>
-                    </div>
-                ) : (
-                    <div className='space-y-3'>
-                        <h4 className="font-semibold text-blue-500">Member is currently in {groupName}.</h4>
-                        <p className="text-sm text-gray-600">Future feature: Send a main member to a sister group as a Kennin or full transfer.</p>
-                        
-                        <h4 className="font-semibold mb-1">Target Sister Group</h4>
-                        <select 
-                            value={targetGroup}
-                            onChange={(e) => setTargetGroup(e.target.value)}
-                            className="w-full p-2 border rounded mb-3"
-                            disabled={sisterGroups.length === 0}
-                        >
-                            <option value="main">-- Select Destination --</option>
-                            {(sisterGroups || []).map(sg => (
-                                <option key={sg.id} value={sg.name}>{sg.name} ({sg.location})</option>
-                            ))}
-                        </select>
-                        <button disabled className="w-full p-2 bg-gray-400 text-white rounded">
-                            Send Member (Feature Coming Soon)
-                        </button>
-                    </div>
-                )}
-                
+                <h4 className="font-semibold mb-2">Choose Integration Path</h4>
+                <div className="grid grid-cols-1 gap-3">
+                    <button 
+                        onClick={() => handleConfirm("transfer")}
+                        disabled={money < 50000}
+                        className="p-3 bg-red-100 text-red-800 rounded font-bold border-l-4 border-red-500 hover:bg-red-200 transition-colors disabled:opacity-50"
+                    >
+                        1. FULL TRANSFER to {groupName}
+                        <p className='text-xs font-normal mt-1'>Removes member from {member.homeGroup} roster permanently and adds them to the Main Group.</p>
+                    </button>
+
+                    <button 
+                        onClick={() => handleConfirm("kennin")}
+                        disabled={money < 50000 || (member.kenninGroups || []).includes('main')}
+                        className="p-3 bg-blue-100 text-blue-800 rounded font-bold border-l-4 border-blue-500 hover:bg-blue-200 transition-colors disabled:opacity-50"
+                    >
+                        2. KENNIN (Concurrent) to {groupName}
+                        <p className='text-xs font-normal mt-1'>Member remains in {member.homeGroup} but can participate in Main Group activities (e.g., singles).</p>
+                    </button>
+                </div>
+
                 <div className="flex justify-end gap-2 mt-4">
-                    <button onClick={() => setShowModal(null)} className="p-2 bg-gray-300 rounded">Close</button>
+                    <button onClick={() => setShowModal(null)} className="p-2 bg-gray-300 rounded">Cancel</button>
                 </div>
             </ModalWrapper>
         );
+    }
+
+    // ========== MAIN → SISTER (UI identical to your old main UI) ==========
+
+    const allGroups = [
+        { id: "main", name: groupName },
+        ...(sisterGroups || []).map(sg => ({ id: sg.id, name: sg.name }))
+    ];
+
+    const [newHomeGroup, setNewHomeGroup] = useState(member.homeGroup);
+    const [kenninStatus, setKenninStatus] = useState(member.kenninGroups || []);
+
+    const toggleKennin = (group) => {
+        if (group === newHomeGroup && group !== "main") {
+            setMessage("A group cannot be both the Group and Kennin.");
+            return;
+        }
+        setKenninStatus(prev =>
+            prev.includes(group)
+                ? prev.filter(g => g !== group)
+                : [...prev, group]
+        );
     };
+
+    const handleHomeChange = (e) => {
+        const selected = e.target.value;
+        setNewHomeGroup(selected);
+        setKenninStatus(prev => prev.filter(g => g !== selected));
+    };
+
+    const handleMove = () => {
+        // Use new logic: if transferring to sister, call new transfer
+        if (newHomeGroup !== "main") {
+            return handleMainMemberTransfer(member, "transfer", newHomeGroup);
+        }
+
+        // Otherwise treat as normal main movement
+        setMembers(prev =>
+            prev.map(m =>
+                String(m.id) === String(member.id)
+                    ? {
+                          ...m,
+                          homeGroup: newHomeGroup,
+                          kenninGroups: kenninStatus.filter(g => g !== newHomeGroup)
+                      }
+                    : m
+            )
+        );
+
+        setMessage(`${member.name}'s status updated.`);
+        setShowModal(null);
+    };
+
+    return (
+        <ModalWrapper title={<span className="flex items-center"><Plane size={20} className="mr-2"/> Manage Placement</span>}>
+            <p className="mb-3">Member: <span className="font-bold">{member.name}</span></p>
+            
+            <h4 className="font-semibold mb-1 mt-3">Group (Transfer)</h4>
+            <p className="text-xs text-gray-500 mb-2">Primary group/base assignment.</p>
+
+            <select 
+                value={newHomeGroup}
+                onChange={handleHomeChange}
+                className="w-full p-2 border rounded mb-4"
+            >
+                {allGroups.map(group => (
+                    <option key={group.id} value={group.id}>
+                        {group.name}
+                    </option>
+                ))}
+            </select>
+
+            <h4 className="font-semibold mb-1 mt-3">Kennin Status</h4>
+            <p className="text-xs text-gray-500 mb-2">Assign concurrent memberships.</p>
+
+            <div className="space-y-2 max-h-40 overflow-y-auto p-2 border rounded">
+                {(sisterGroups || []).map(sg => (
+                    <div key={sg.id} className="flex items-center justify-between">
+                        <label className={sg.id === newHomeGroup ? "text-gray-400" : "text-gray-700"}>
+                            <input
+                                type="checkbox"
+                                checked={kenninStatus.includes(sg.id)}
+                                onChange={() => toggleKennin(sg.id)}
+                                disabled={sg.id === newHomeGroup}
+                                className="mr-2"
+                            />
+                            {sg.name}
+                        </label>
+                    </div>
+                ))}
+            </div>
+
+            <div className="flex justify-end gap-2 mt-4">
+                <button onClick={() => setShowModal(null)} className="p-2 bg-gray-300 rounded">Cancel</button>
+                <button onClick={handleMove} className="p-2 bg-blue-500 text-white rounded">Confirm Update</button>
+            </div>
+        </ModalWrapper>
+    );
+};
 
     const MediaJobModal = () => {
         // Need to filter members to exclude current Kennin members in the main roster to avoid redundancy 
@@ -3442,52 +3616,120 @@ if (!gameStarted) {
               {activeTour ? `Advance Tour (${activeTour.weeksLeft} Wk Left)` : 'Next Week'}
             </button>
           </div>
+    {/* Member Detail Panel */}
+{selectedMember ? (
+  <div className="flex-1 overflow-y-auto p-4">
+    <button 
+      onClick={() => setSelectedMember(null)} 
+      className="text-sm text-blue-500 mb-2 flex items-center"
+    >
+      <ChevronUp size={16}/> Back to all members
+    </button>
 
-          {/* Member Detail Panel */}
-          {selectedMember ? (
-            <div className="flex-1 overflow-y-auto p-4">
-              <button onClick={() => setSelectedMember(null)} className="text-sm text-blue-500 mb-2 flex items-center"><ChevronUp size={16}/> Back to all members</button>
-              <h2 className="text-2xl font-bold mb-2">{selectedMember.name}</h2>
-              <p className="text-sm text-gray-700 dark:text-gray-300 mb-1">
-                  {selectedMember.isSister ? `Sister Group Member (${selectedMember.homeGroup})` : `Main Group Member`}
-                  {selectedMember.isKennin && ' (Kennin)'}
-              </p>
-              <p className="text-gray-700 dark:text-gray-300 mb-4">
-                {selectedMember.nickname} | {selectedMember.age} y.o.</p>
-              
-              <div className="mb-4">
-                <StatBar label="Singing" value={selectedMember.singing} color="bg-blue-500" />
-                <StatBar label="Dancing" value={selectedMember.dancing} color="bg-green-500" />
-                <StatBar label="Variety" value={selectedMember.variety} color="bg-pink-500" />
-                <StatBar label="Stamina" value={selectedMember.stamina} color={selectedMember.stamina < 30 ? "bg-red-500" : "bg-gray-400"} />
-                <StatBar label="Morale" value={selectedMember.morale} color="bg-purple-500" />
-                <p className="text-xs text-gray-500 mt-2">Social Followers: {(selectedMember.socialFollowers || 0).toLocaleString()}</p>
-              </div>
+    {/* Display Name */}
+    <h2 className="text-2xl font-bold mb-2">{selectedMember.name}</h2>
 
-              <h4 className="font-semibold mb-2">Actions</h4>
-              <div className="grid grid-cols-2 gap-2 mb-4">
-                <button onClick={() => trainMember(selectedMember.id, 'singing')} className="p-2 bg-blue-100 text-blue-700 rounded text-sm" disabled={!selectedMember.isAvailable}>Train Vocal (¥500)</button>
-                <button onClick={() => trainMember(selectedMember.id, 'dancing')} className="p-2 bg-green-100 text-green-700 rounded text-sm" disabled={!selectedMember.isAvailable}>Train Dance (¥500)</button>
-                <button onClick={() => trainMember(selectedMember.id, 'variety')} className="p-2 bg-pink-100 text-pink-700 rounded text-sm" disabled={!selectedMember.isAvailable}>Train Variety (¥500)</button>
-                <button onClick={() => restMember(selectedMember.id)} className="p-2 bg-gray-200 text-gray-700 rounded text-sm" disabled={!selectedMember.isAvailable}>Rest</button>
-              </div>
-              
-              <h4 className="font-semibold mb-2">Manage</h4>
-              <div className="grid grid-cols-2 gap-2 mb-4">
-                <button onClick={() => { setModalData(selectedMember); setShowModal('rename'); }} className="p-2 bg-gray-200 text-gray-700 rounded text-sm">Rename</button>
-                
-                {/* Unified Move/Kennin Button */}
-                <button onClick={() => { setModalData(selectedMember); setShowModal('moveMember'); }} className="p-2 bg-gray-200 text-gray-700 rounded text-sm">
-                    {selectedMember.isSister ? 'Transfer/Kennin' : 'Move/Kennin'}
-                </button>
-                
-                <button onClick={() => graduateMember(selectedMember.id)} className="p-2 bg-red-200 text-red-700 rounded text-sm" disabled={!selectedMember.isAvailable}>Graduate</button>
-              </div>
-              
-              <MemberParticipationHistory member={selectedMember} />
+    {/* Member Type */}
+    <p className="text-sm text-gray-600 mb-1">
+      {selectedMember.homeGroup === "main"
+        ? "Main Group Member"
+        : `Sister Group Member (${selectedMember.homeGroup})`}
+      {selectedMember.kenninGroups?.length > 0 && (
+  <>
+    {" — Kennin: "}
+    {selectedMember.kenninGroups
+      .map(id => {
+        const sg = sisterGroups?.find(g => g.id === id);
+        return sg ? sg.name : id; // fallback to ID if group missing
+      })
+      .join(", ")}
+  </>
+)}
+    </p>
 
-            </div>
-          ) : (
+    <p className="text-gray-600 mb-4">
+      {selectedMember.nickname} | {selectedMember.age} y.o.
+    </p>
+
+    {/* Stats */}
+    <div className="mb-4">
+      <StatBar label="Singing" value={selectedMember.singing} color="bg-blue-500" />
+      <StatBar label="Dancing" value={selectedMember.dancing} color="bg-green-500" />
+      <StatBar label="Variety" value={selectedMember.variety} color="bg-pink-500" />
+      <StatBar label="Stamina" value={selectedMember.stamina} color={selectedMember.stamina < 30 ? "bg-red-500" : "bg-gray-400"} />
+      <StatBar label="Morale" value={selectedMember.morale} color="bg-purple-500" />
+
+      <p className="text-xs text-gray-500 mt-2">
+        Social Followers: {(selectedMember.socialFollowers || 0).toLocaleString()}
+      </p>
+    </div>
+
+    {/* Actions */}
+    <h4 className="font-semibold mb-2">Actions</h4>
+    <div className="grid grid-cols-2 gap-2 mb-4">
+      <button 
+        onClick={() => trainMember(selectedMember.realId || selectedMember.id, "singing")} 
+        className="p-2 bg-blue-100 text-blue-700 rounded text-sm"
+        disabled={!selectedMember.isAvailable}
+      >
+        Train Vocal (¥500)
+      </button>
+
+      <button 
+        onClick={() => trainMember(selectedMember.realId || selectedMember.id, "dancing")} 
+        className="p-2 bg-green-100 text-green-700 rounded text-sm"
+        disabled={!selectedMember.isAvailable}
+      >
+        Train Dance (¥500)
+      </button>
+
+      <button 
+        onClick={() => trainMember(selectedMember.realId || selectedMember.id, "variety")} 
+        className="p-2 bg-pink-100 text-pink-700 rounded text-sm"
+        disabled={!selectedMember.isAvailable}
+      >
+        Train Variety (¥500)
+      </button>
+
+      <button 
+        onClick={() => restMember(selectedMember.realId || selectedMember.id)} 
+        className="p-2 bg-gray-200 text-gray-700 rounded text-sm"
+        disabled={!selectedMember.isAvailable}
+      >
+        Rest
+      </button>
+    </div>
+
+    {/* Manage */}
+    <h4 className="font-semibold mb-2">Manage</h4>
+    <div className="grid grid-cols-2 gap-2 mb-4">
+      <button 
+        onClick={() => { setModalData(selectedMember); setShowModal("rename"); }} 
+        className="p-2 bg-gray-200 text-gray-700 rounded text-sm"
+      >
+        Rename
+      </button>
+
+      <button 
+        onClick={() => { setModalData(selectedMember); setShowModal("moveMember"); }} 
+        className="p-2 bg-gray-200 text-gray-700 rounded text-sm"
+      >
+        {selectedMember.homeGroup === "main" ? "Move/Kennin" : "Transfer/Kennin"}
+      </button>
+
+      <button 
+        onClick={() => graduateMember(selectedMember.realId || selectedMember.id)} 
+        className="p-2 bg-red-200 text-red-700 rounded text-sm"
+        disabled={!selectedMember.isAvailable}
+      >
+        Graduate
+      </button>
+    </div>
+
+    <MemberParticipationHistory member={selectedMember} />
+  </div>
+) : (
+
 /* Side Panel Tabs (Desktop) */
 <div className="hidden md:flex flex-col flex-1">
   <nav className="flex border-b border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-gray-900">
