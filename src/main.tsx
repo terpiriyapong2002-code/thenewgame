@@ -1,6 +1,8 @@
+// @ts-nocheck
+
 import React from 'react'
     import ReactDOM from 'react-dom/client'
-    import App from './App.jsx'
+    import App from './App.tsx'
     import './index.css'
 
     // --- Local Environment Mocking ---
@@ -25,7 +27,9 @@ import React from 'react'
     window.__initial_auth_token = ''; 
     // ---------------------------------
 
-    ReactDOM.createRoot(document.getElementById('root')).render(
+const root = document.getElementById('root')!;
+ReactDOM.createRoot(root).render(
+
       <React.StrictMode>
         <App />
       </React.StrictMode>,
