@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
 
-  "homepage": "https://https://lucia-official.github.io/thenewgame/",
+  "homepage": "https://https:lucia-official.github.io/thenewgame/",
 
   "scripts": {
     "dev": "vite",
